@@ -1,7 +1,4 @@
-/**
- * Tedarikçi Kalite Model - Kalite metrikleri
- * Veritabanı şemasına tam uyumlu
- */
+
 const BaseModel = require('./BaseModel');
 
 class TedarikciKaliteModel extends BaseModel {
@@ -9,7 +6,7 @@ class TedarikciKaliteModel extends BaseModel {
         super('tedarikci_kalite', 'kalite_id');
     }
 
-    // Yıllık kalite trendi
+
     async getTrend() {
         return this.query(`
             SELECT 
@@ -27,7 +24,7 @@ class TedarikciKaliteModel extends BaseModel {
         `);
     }
 
-    // PPM trendi
+
     async getPPMTrend() {
         return this.query(`
             SELECT 
@@ -40,7 +37,7 @@ class TedarikciKaliteModel extends BaseModel {
         `);
     }
 
-    // Teslimat trendi
+
     async getTeslimatTrend() {
         return this.query(`
             SELECT 
@@ -53,7 +50,7 @@ class TedarikciKaliteModel extends BaseModel {
         `);
     }
 
-    // Dağılım
+
     async getDagilim(yil = 2025) {
         return this.query(`
             SELECT 
@@ -67,7 +64,7 @@ class TedarikciKaliteModel extends BaseModel {
         `, [yil]);
     }
 
-    // Karşılaştırma
+
     async karsilastir(t1, t2) {
         return this.query(`
             SELECT 
@@ -83,7 +80,7 @@ class TedarikciKaliteModel extends BaseModel {
         `, [t1, t2]);
     }
 
-    // Kategori bazlı
+
     async getByKategori(kategori) {
         return this.query(`
             SELECT 
@@ -100,7 +97,7 @@ class TedarikciKaliteModel extends BaseModel {
         `);
     }
 
-    // Son durum
+
     async getSonDurum(yil = 2025) {
         return this.query(`
             SELECT 
@@ -118,9 +115,9 @@ class TedarikciKaliteModel extends BaseModel {
         `, [yil]);
     }
 
-    // ===== TEK TEDARİKÇİ BAZLI SORGULAR =====
 
-    // Tedarikçi listesi (dropdown için)
+
+
     async getTedarikciListesi() {
         return this.query(`
             SELECT tedarikci_id, tedarikci_kodu, tedarikci_adi, ulke
@@ -129,7 +126,7 @@ class TedarikciKaliteModel extends BaseModel {
         `);
     }
 
-    // Tek tedarikçi kalite trendi + ortalama değişim
+
     async getKaliteTrendiByTedarikci(tedarikciId, startYear = 2016, endYear = 2025) {
         return this.query(`
             SELECT 
@@ -143,7 +140,7 @@ class TedarikciKaliteModel extends BaseModel {
         `, [tedarikciId, startYear, endYear]);
     }
 
-    // Tek tedarikçi PPM trendi
+
     async getPPMTrendiByTedarikci(tedarikciId, startYear = 2016, endYear = 2025) {
         return this.query(`
             SELECT 
@@ -157,7 +154,7 @@ class TedarikciKaliteModel extends BaseModel {
         `, [tedarikciId, startYear, endYear]);
     }
 
-    // Tek tedarikçi servis/garanti analizi
+
     async getServisAnaliziByTedarikci(tedarikciId, startYear = 2016, endYear = 2025) {
         return this.query(`
             SELECT 
@@ -173,7 +170,7 @@ class TedarikciKaliteModel extends BaseModel {
         `, [tedarikciId, startYear, endYear]);
     }
 
-    // Tek tedarikçi teslimat gecikme analizi
+
     async getTeslimatGecikmeByTedarikci(tedarikciId, startYear = 2016, endYear = 2025) {
         return this.query(`
             SELECT 
@@ -189,7 +186,7 @@ class TedarikciKaliteModel extends BaseModel {
         `, [tedarikciId, startYear, endYear]);
     }
 
-    // Tek tedarikçi özet (KPI için)
+
     async getTedarikciOzet(tedarikciId, yil = 2025) {
         return this.query(`
             SELECT 

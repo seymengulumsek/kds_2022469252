@@ -1,19 +1,10 @@
-/**
- * Forecast Helper - Tahmin hesaplama fonksiyonları
- * DB'den gelen son veriye göre gelecek tahmini yapar
- */
+
 
 const ForecastHelper = {
-    /**
-     * Lineer tahmin hesapla
-     * @param {number} baseValue - Son gerçek değer (DB'den)
-     * @param {number} changePercent - Artış/azalış yüzdesi
-     * @param {number} months - Tahmin süresi (ay)
-     * @returns {Array} Aylık tahmin dizisi
-     */
+    
     linear(baseValue, changePercent, months) {
         const result = [];
-        const monthlyChange = changePercent / 12; // Yıllık yüzdeyi aylığa çevir
+        const monthlyChange = changePercent / 12;
 
         for (let i = 1; i <= months; i++) {
             const value = baseValue * (1 + (monthlyChange * i) / 100);
@@ -25,13 +16,7 @@ const ForecastHelper = {
         return result;
     },
 
-    /**
-     * Bileşik tahmin hesapla (compound growth)
-     * @param {number} baseValue - Son gerçek değer
-     * @param {number} annualPercent - Yıllık artış yüzdesi
-     * @param {number} months - Tahmin süresi
-     * @returns {Array} Aylık tahmin dizisi
-     */
+    
     compound(baseValue, annualPercent, months) {
         const result = [];
         const monthlyRate = Math.pow(1 + annualPercent / 100, 1 / 12) - 1;
@@ -46,35 +31,24 @@ const ForecastHelper = {
         return result;
     },
 
-    /**
-     * Senaryo bazlı tahmin
-     * @param {number} baseValue - Son gerçek değer
-     * @param {string} scenario - "optimistic" | "realistic" | "pessimistic"
-     * @param {number} months - Tahmin süresi
-     * @returns {Array} Aylık tahmin dizisi
-     */
+    
     scenario(baseValue, scenario, months) {
         const rates = {
-            optimistic: 15,    // %15 yıllık artış
-            realistic: 5,      // %5 yıllık artış
-            pessimistic: -5    // %5 yıllık azalış
+            optimistic: 15,
+            realistic: 5,
+            pessimistic: -5
         };
         const rate = rates[scenario] || rates.realistic;
         return this.compound(baseValue, rate, months);
     },
 
-    /**
-     * Trend bazlı tahmin (geçmiş veriden trend çıkar)
-     * @param {Array} historicalData - Geçmiş veri dizisi [{value: n}, ...]
-     * @param {number} months - Tahmin süresi
-     * @returns {Array} Aylık tahmin dizisi
-     */
+    
     trend(historicalData, months) {
         if (!historicalData || historicalData.length < 2) {
             return [];
         }
 
-        // Basit lineer regresyon
+
         const n = historicalData.length;
         let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
 
@@ -100,9 +74,7 @@ const ForecastHelper = {
         return result;
     },
 
-    /**
-     * Meta bilgisi oluştur
-     */
+    
     createMeta(historicalRows, forecastMonths, params) {
         return {
             source: "mysql",

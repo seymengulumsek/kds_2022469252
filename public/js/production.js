@@ -1,6 +1,4 @@
-/**
- * Production Scenario JavaScript
- */
+
 document.addEventListener('DOMContentLoaded', () => {
     setupSliders();
     loadCapacityChart();

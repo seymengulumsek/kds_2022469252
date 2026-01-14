@@ -1,11 +1,8 @@
-/**
- * Dashboard Controller v2 - Gelişmiş Kurumsal Panel
- * Operasyon Kontrol Merkezi - Tüm hesaplamalar backend'de
- */
+
 const models = require('../models');
 const { asyncHandler } = require('../middleware');
 
-// Yardımcı: Maksimum yıl ve çeyrek
+
 async function getMaxYilCeyrek() {
     try {
         const result = await models.tarih.query('SELECT MAX(yil) AS max_yil, MAX(ceyrek) AS max_ceyrek FROM tarih WHERE yil = (SELECT MAX(yil) FROM tarih)');
@@ -16,7 +13,7 @@ async function getMaxYilCeyrek() {
 }
 
 const DashboardController = {
-    // GET /api/dashboard/overview - YÖNETİCİ ÖZET ŞERİDİ
+
     getOverview: asyncHandler(async (req, res) => {
         const { yil, ceyrek } = await getMaxYilCeyrek();
         const oncekiCeyrek = ceyrek > 1 ? ceyrek - 1 : 4;
@@ -33,11 +30,11 @@ const DashboardController = {
         };
 
         try {
-            // Aktif hat sayısı
+
             const hatlar = await models.tarih.query(`SELECT COUNT(*) as adet FROM hat`);
             data.aktifHatlar = parseInt(hatlar[0]?.adet) || 0;
 
-            // Toplam üretim (YTD)
+
             const uretimSon = await models.tarih.query(`
                 SELECT SUM(gerceklesen_miktar) as toplam FROM uretim_talep ut
                 JOIN tarih t ON ut.tarih_id = t.tarih_id WHERE t.yil = ?
@@ -50,7 +47,7 @@ const DashboardController = {
             const oncekiUretim = parseInt(uretimOnceki[0]?.toplam) || 1;
             data.uretimDegisim = Math.round(((data.toplamUretim - oncekiUretim) / oncekiUretim) * 100);
 
-            // Scrap oranı
+
             const scrapSon = await models.tarih.query(`
                 SELECT AVG(scrap_orani) as ort FROM kaynak_kalitesi k
                 JOIN tarih t ON k.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?
@@ -63,7 +60,7 @@ const DashboardController = {
             const oncekiScrap = parseFloat(scrapOnceki[0]?.ort) || 0.01;
             data.scrapDegisim = Math.round(((data.scrapOrani - oncekiScrap) / oncekiScrap) * 100);
 
-            // Kaza yoğunluk endeksi
+
             const kazaSon = await models.tarih.query(`
                 SELECT (SELECT COALESCE(SUM(kaza_sayisi), 0) FROM ergonomi e JOIN tarih t ON e.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?) +
                        (SELECT COALESCE(SUM(kaza_sayisi), 0) FROM intralojistik l JOIN tarih t ON l.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?) as toplam
@@ -76,7 +73,7 @@ const DashboardController = {
             const oncekiKaza = parseInt(kazaOnceki[0]?.toplam) || 1;
             data.kazaDegisim = Math.round(((data.kazaEndeksi - oncekiKaza) / oncekiKaza) * 100);
 
-            // Kayıp maliyet
+
             const kayipSon = await models.tarih.query(`
                 SELECT 
                     (SELECT COALESCE(SUM(scrap_orani * 15000), 0) FROM kaynak_kalitesi k JOIN tarih t ON k.tarih_id = t.tarih_id WHERE t.yil = ?) +
@@ -85,16 +82,16 @@ const DashboardController = {
             `, [yil, yil, yil]);
             data.kayipMaliyet = Math.round(parseFloat(kayipSon[0]?.toplam) || 0);
 
-            // Veri güncellik skoru
+
             const sonAy = await models.tarih.query(`SELECT MAX(ay) as ay FROM tarih WHERE yil = ?`, [yil]);
             data.veriGuncellikSkoru = Math.round(((sonAy[0]?.ay || 1) / 12) * 100);
 
-            // --- YENİ KPI KARTLARI ---
 
-            // --- YENİ KPI KARTLARI (2025 ODAKLI) ---
+
+
             const kpiYil = 2025;
 
-            // 1. En Çok Satılan Araç
+
             const populerArac = await models.tarih.query(`
                 SELECT m.model_adi, SUM(ut.gerceklesen_miktar) as toplam 
                 FROM uretim_talep ut
@@ -111,8 +108,8 @@ const DashboardController = {
                 metin: populerArac[0] ? `2025 Lideri: ${populerArac[0].model_adi}` : '2025 Verisi Yok'
             };
 
-            // 2. Alternatif Tedarikçi (Riskli Sayısı)
-            // 2. Tedarikçi KPI (Sözleşme Yenileme Mesajı)
+
+
             const toplamTedarikci = await models.tarih.query(`SELECT COUNT(*) as adet FROM tedarikci`);
             const tdCount = parseInt(toplamTedarikci[0]?.adet) || 0;
             data.riskliTedarikci = {
@@ -120,7 +117,7 @@ const DashboardController = {
                 metin: 'Tedarikçilerle sözleşme yenileme süresi yaklaşıyor'
             };
 
-            // 3. Bakım/Yatırım Gerektiren Robot
+
             const sorunluRobotlar = await models.tarih.query(`
                 SELECT COUNT(DISTINCT r.robot_id) as adet
                 FROM robot r
@@ -135,7 +132,7 @@ const DashboardController = {
                 metin: rbCount > 0 ? `${rbCount} Adet Robot Bakım/Yatırım Gerekli` : 'Tüm Robotlar Stabil'
             };
 
-            // 4. Lojistik: AGV Geçiş Önerisi
+
             const lojistikAnaliz = await models.tarih.query(`
                 SELECT SUM(kaza_sayisi) as kaza
                 FROM intralojistik l
@@ -145,7 +142,7 @@ const DashboardController = {
             const forkliftKaza = parseInt(lojistikAnaliz[0]?.kaza) || 0;
             data.agvOnerisi = forkliftKaza > 0 ? "AGV'ye Geçiş Hızla Değerlendirilmeli" : "Lojistik Süreç Stabil";
 
-            // ------------------------
+
 
         } catch (error) {
             console.error('Dashboard overview hatası:', error.message);
@@ -154,7 +151,7 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/dashboard/saglik-haritasi - OPERASYON SAĞLIK HARİTASI
+
     getSaglikHaritasi: asyncHandler(async (req, res) => {
         const data = { ceyrekler: [], uretim: [], scrap: [], kaza: [], teslimat: [] };
 
@@ -166,28 +163,28 @@ const DashboardController = {
             for (const r of sonuc) {
                 data.ceyrekler.push(`${r.yil}-Ç${r.ceyrek}`);
 
-                // Üretim
+
                 const uretim = await models.tarih.query(`
                     SELECT SUM(gerceklesen_miktar) as toplam FROM uretim_talep ut
                     JOIN tarih t ON ut.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?
                 `, [r.yil, r.ceyrek]);
                 data.uretim.push(parseInt(uretim[0]?.toplam) || 0);
 
-                // Scrap
+
                 const scrap = await models.tarih.query(`
                     SELECT AVG(scrap_orani) as ort FROM kaynak_kalitesi k
                     JOIN tarih t ON k.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?
                 `, [r.yil, r.ceyrek]);
                 data.scrap.push(Math.round((parseFloat(scrap[0]?.ort) || 0) * 100) / 100);
 
-                // Kaza
+
                 const kaza = await models.tarih.query(`
                     SELECT (SELECT COALESCE(SUM(kaza_sayisi), 0) FROM ergonomi e JOIN tarih t ON e.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?) +
                            (SELECT COALESCE(SUM(kaza_sayisi), 0) FROM intralojistik l JOIN tarih t ON l.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?) as toplam
                 `, [r.yil, r.ceyrek, r.yil, r.ceyrek]);
                 data.kaza.push(parseInt(kaza[0]?.toplam) || 0);
 
-                // Teslimat
+
                 const teslimat = await models.tarih.query(`
                     SELECT AVG(teslimat_suresi) as ort FROM tedarikci_kalite tk
                     JOIN tarih t ON tk.tarih_id = t.tarih_id WHERE t.yil = ? AND t.ceyrek = ?
@@ -202,7 +199,7 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/dashboard/kayip-ekonomisi - KAYIP EKONOMİSİ PANELİ
+
     getKayipEkonomisi: asyncHandler(async (req, res) => {
         const { yil } = await getMaxYilCeyrek();
         const data = { ceyrekler: [], scrap: [], kaza: [], bekleme: [], tedarik: [], toplamKayip: 0, uretimiOrani: 0 };
@@ -239,7 +236,7 @@ const DashboardController = {
             data.toplamKayip = data.scrap.reduce((a, b) => a + b, 0) + data.kaza.reduce((a, b) => a + b, 0) +
                 data.bekleme.reduce((a, b) => a + b, 0) + data.tedarik.reduce((a, b) => a + b, 0);
 
-            // Üretim değeri
+
             const uretimDeger = await models.tarih.query(`
                 SELECT SUM(gerceklesen_miktar * 45000) as deger FROM uretim_talep ut
                 JOIN tarih t ON ut.tarih_id = t.tarih_id WHERE t.yil = ?
@@ -254,7 +251,7 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/dashboard/kayip-kaynak - KAYIP KAYNAĞI DERİNLİĞİ
+
     getKayipKaynak: asyncHandler(async (req, res) => {
         const { yil } = await getMaxYilCeyrek();
         const data = {
@@ -263,43 +260,43 @@ const DashboardController = {
         };
 
         try {
-            // İnsan kaynaklı
+
             const insan = await models.tarih.query(`
                 SELECT SUM(kaza_sayisi) as toplam FROM ergonomi e
                 JOIN tarih t ON e.tarih_id = t.tarih_id WHERE t.yil = ?
             `, [yil]);
             data.ana.insan = parseInt(insan[0]?.toplam) || 0;
 
-            // Robot kaynaklı
+
             const robot = await models.tarih.query(`
                 SELECT SUM(ariza_sayisi) as toplam FROM robot_bakim rb
                 JOIN tarih t ON rb.tarih_id = t.tarih_id WHERE t.yil = ?
             `, [yil]);
             data.ana.robot = parseInt(robot[0]?.toplam) || 0;
 
-            // Sistem (lojistik) kaynaklı
+
             const sistem = await models.tarih.query(`
                 SELECT SUM(kaza_sayisi) as toplam FROM intralojistik l
                 JOIN tarih t ON l.tarih_id = t.tarih_id WHERE t.yil = ?
             `, [yil]);
             data.ana.sistem = parseInt(sistem[0]?.toplam) || 0;
 
-            // Tedarikçi kaynaklı
+
             const tedarikci = await models.tarih.query(`
                 SELECT SUM(ppm_orani) as toplam FROM tedarikci_kalite tk
                 JOIN tarih t ON tk.tarih_id = t.tarih_id WHERE t.yil = ?
             `, [yil]);
             data.ana.tedarikci = Math.round(parseFloat(tedarikci[0]?.toplam) || 0);
 
-            // Detaylar
-            // İnsan detay (yaş grubu)
+
+
             const insanDetay = await models.tarih.query(`
                 SELECT yas_grubu, SUM(kaza_sayisi) as toplam FROM ergonomi
                 GROUP BY yas_grubu ORDER BY toplam DESC
             `);
             data.detay.insan = insanDetay.map(d => ({ ad: d.yas_grubu, deger: parseInt(d.toplam) || 0 }));
 
-            // Robot detay (tip)
+
             const robotDetay = await models.tarih.query(`
                 SELECT r.robot_tipi, SUM(rb.ariza_sayisi) as toplam
                 FROM robot_bakim rb JOIN robot r ON rb.robot_id = r.robot_id
@@ -307,7 +304,7 @@ const DashboardController = {
             `);
             data.detay.robot = robotDetay.map(d => ({ ad: d.robot_tipi, deger: parseInt(d.toplam) || 0 }));
 
-            // Sistem detay (taşıma tipi)
+
             const sistemDetay = await models.tarih.query(`
                 SELECT tasima_tipi, SUM(kaza_sayisi) as toplam FROM intralojistik
                 GROUP BY tasima_tipi ORDER BY toplam DESC
@@ -321,12 +318,12 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/dashboard/kritik-noktalar - KRİTİK NOKTA LİSTESİ
+
     getKritikNoktalar: asyncHandler(async (req, res) => {
         const data = { robotlar: [], istasyonlar: [], tedarikciler: [] };
 
         try {
-            // En riskli 5 robot
+
             const robotlar = await models.tarih.query(`
                 SELECT r.robot_kodu, r.robot_tipi, SUM(rb.ariza_sayisi) as ariza, AVG(k.scrap_orani) as scrap
                 FROM robot r
@@ -341,7 +338,7 @@ const DashboardController = {
                 ariza: parseInt(r.ariza) || 0, scrap: Math.round((parseFloat(r.scrap) || 0) * 100) / 100
             }));
 
-            // En riskli 5 istasyon
+
             const istasyonlar = await models.tarih.query(`
                 SELECT i.istasyon_adi, SUM(e.kaza_sayisi) as kaza, AVG(e.risk_skoru) as risk
                 FROM istasyon i JOIN ergonomi e ON i.istasyon_id = e.istasyon_id
@@ -353,7 +350,7 @@ const DashboardController = {
                 ad: i.istasyon_adi, kaza: parseInt(i.kaza) || 0, risk: Math.round((parseFloat(i.risk) || 0) * 10) / 10
             }));
 
-            // En problemli 5 tedarikçi
+
             const tedarikciler = await models.tarih.query(`
                 SELECT t.tedarikci_adi, AVG(tk.ppm_orani) as hata, AVG(tk.teslimat_suresi) as gecikme
                 FROM tedarikci t JOIN tedarikci_kalite tk ON t.tedarikci_id = tk.tedarikci_id
@@ -373,12 +370,12 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/dashboard/veri-guveni - VERİ GÜVENİ PANELİ
+
     getVeriGuveni: asyncHandler(async (req, res) => {
         const data = { sonGiris: '', kullanicilar: [], eksikModuller: [] };
 
         try {
-            // Son veri giriş tarihi
+
             const sonTarih = await models.tarih.query(`SELECT MAX(yil) as yil, MAX(ay) as ay FROM tarih`);
             if (sonTarih[0]) {
                 const aylar = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
@@ -386,7 +383,7 @@ const DashboardController = {
                 data.sonGiris = `${sonTarih[0].ay ? aylar[sonTarih[0].ay] : ''} ${sonTarih[0].yil}`;
             }
 
-            // Kullanıcılar
+
             try {
                 const kullanicilar = await models.tarih.query(`SELECT ad_soyad, rol FROM kullanici LIMIT 5`);
                 data.kullanicilar = kullanicilar.map(k => ({ ad: k.ad_soyad, rol: k.rol }));
@@ -394,7 +391,7 @@ const DashboardController = {
                 data.kullanicilar = [{ ad: 'Sistem Yöneticisi', rol: 'Admin' }];
             }
 
-            // Eksik modüller (basit kontrol)
+
             const maxYil = sonTarih[0]?.yil || 2025;
             const kontroller = [
                 { modul: 'Üretim', tablo: 'uretim_talep' },
@@ -420,7 +417,7 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/dashboard/hedef-gerceklesen - HEDEF – GERÇEKLEŞEN – GELECEK
+
     getHedefGerceklesen: asyncHandler(async (req, res) => {
         const { yil } = await getMaxYilCeyrek();
         const data = {
@@ -432,7 +429,7 @@ const DashboardController = {
         };
 
         try {
-            // Gerçekleşenler
+
             const scrap = await models.tarih.query(`
                 SELECT AVG(scrap_orani) as ort FROM kaynak_kalitesi k
                 JOIN tarih t ON k.tarih_id = t.tarih_id WHERE t.yil = ?
@@ -457,13 +454,13 @@ const DashboardController = {
             `, [yil]);
             data.gerceklesen.teslimat = Math.round((parseFloat(teslimat[0]?.ort) || 0) * 10) / 10;
 
-            // Sapma hesapla
+
             data.sapma.scrap = Math.round(((data.gerceklesen.scrap - data.hedefler.scrap) / data.hedefler.scrap) * 100);
             data.sapma.kaza = Math.round(((data.gerceklesen.kaza - data.hedefler.kaza) / data.hedefler.kaza) * 100);
             data.sapma.uretim = Math.round(((data.gerceklesen.uretim - data.hedefler.uretim) / data.hedefler.uretim) * 100);
             data.sapma.teslimat = Math.round(((data.gerceklesen.teslimat - data.hedefler.teslimat) / data.hedefler.teslimat) * 100);
 
-            // 2026 projeksiyonu (son 2 yıl trendi)
+
             const trendScrap = await models.tarih.query(`
                 SELECT t.yil, AVG(k.scrap_orani) as ort FROM kaynak_kalitesi k
                 JOIN tarih t ON k.tarih_id = t.tarih_id WHERE t.yil >= ?
@@ -474,7 +471,7 @@ const DashboardController = {
                 data.projeksiyon2026.scrap = Math.round((data.gerceklesen.scrap + degisim) * 100) / 100;
             }
 
-            // Uyarılar
+
             if (data.sapma.scrap > 10) data.uyarilar.push('Scrap oranı hedefin %' + data.sapma.scrap + ' üzerinde');
             if (data.sapma.kaza > 20) data.uyarilar.push('Kaza sayısı hedefin %' + data.sapma.kaza + ' üzerinde');
             if (data.sapma.uretim < -10) data.uyarilar.push('Üretim hedefin %' + Math.abs(data.sapma.uretim) + ' altında');
@@ -486,7 +483,7 @@ const DashboardController = {
         res.json({ success: true, data });
     }),
 
-    // Eski endpoint'ler (uyumluluk)
+
     getTrend: asyncHandler(async (req, res) => {
         return DashboardController.getSaglikHaritasi(req, res);
     }),

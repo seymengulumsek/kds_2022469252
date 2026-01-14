@@ -1,6 +1,4 @@
-/**
- * Kaynak Routes - Historical + Forecast
- */
+
 const express = require('express');
 const router = express.Router();
 const KaynakController = require('../controllers/kaynakController');

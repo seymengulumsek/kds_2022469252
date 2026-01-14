@@ -1,6 +1,4 @@
-/**
- * Tedarikçi Model - Tedarikçi tablosu işlemleri
- */
+
 const BaseModel = require('./BaseModel');
 
 class TedarikciModel extends BaseModel {

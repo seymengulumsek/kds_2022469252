@@ -1,7 +1,4 @@
-/**
- * Üretim Talep Model - Üretim ve talep verileri
- * mercedes_kds veritabanı şemasına uyumlu
- */
+
 const BaseModel = require('./BaseModel');
 
 class UretimTalepModel extends BaseModel {
@@ -9,7 +6,7 @@ class UretimTalepModel extends BaseModel {
         super('uretim_talep', 'talep_id');
     }
 
-    // Yıllık trend (ICE vs EV)
+
     async getTrendByYakitTipi() {
         return this.query(`
             SELECT 
@@ -26,7 +23,7 @@ class UretimTalepModel extends BaseModel {
         `);
     }
 
-    // Model bazlı trend
+
     async getTrendByModel(modelId) {
         return this.query(`
             SELECT t.yil, t.ay, u.talep_miktari, u.gerceklesen_miktar
@@ -37,7 +34,7 @@ class UretimTalepModel extends BaseModel {
         `, [modelId]);
     }
 
-    // Son yıl verileri
+
     async getSonYil(yil = 2024) {
         return this.query(`
             SELECT u.*, m.model_adi, m.guc_tipi, t.yil, t.ay
@@ -48,7 +45,7 @@ class UretimTalepModel extends BaseModel {
         `, [yil]);
     }
 
-    // Kapasite kullanımı
+
     async getKapasiteKullanimi() {
         return this.query(`
             SELECT 
@@ -64,7 +61,7 @@ class UretimTalepModel extends BaseModel {
         `);
     }
 
-    // Model bazlı üretim
+
     async getModelBazli(yil = 2025) {
         return this.query(`
             SELECT 
@@ -81,7 +78,7 @@ class UretimTalepModel extends BaseModel {
         `, [yil]);
     }
 
-    // Hat bazlı üretim
+
     async getHatBazli(yil = 2025) {
         return this.query(`
             SELECT 
@@ -98,7 +95,7 @@ class UretimTalepModel extends BaseModel {
         `, [yil]);
     }
 
-    // Yıllık karşılaştırma
+
     async getYillikKarsilastirma() {
         return this.query(`
             SELECT 
@@ -112,7 +109,7 @@ class UretimTalepModel extends BaseModel {
         `);
     }
 
-    // Kapasite yeterlilik analizi
+
     async getKapasiteYeterlilik(yil = 2025) {
         return this.query(`
             SELECT 
@@ -131,7 +128,7 @@ class UretimTalepModel extends BaseModel {
         `, [yil]);
     }
 
-    // Hat / Araç tipi dağılımı
+
     async getHatAracTipiDagilim(yil = 2025) {
         return this.query(`
             SELECT 
@@ -152,10 +149,10 @@ class UretimTalepModel extends BaseModel {
         `, [yil, yil]);
     }
 
-    // ===== YIL BAZLI DEĞİŞİM HESAPLAMA (Grafik altı özet için) =====
-    // MySQL 5.7 uyumlu (LAG() yerine self-join kullanılıyor)
 
-    // ICE ve EV ayrı ayrı trend özeti - MySQL 5.7 uyumlu
+
+
+
     async getGucTipiBazliTrendOzet(startYear, endYear) {
         return this.query(`
             SELECT 

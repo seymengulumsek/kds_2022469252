@@ -1,6 +1,4 @@
-/**
- * Tarih Model - Tarih tablosu işlemleri
- */
+
 const BaseModel = require('./BaseModel');
 
 class TarihModel extends BaseModel {

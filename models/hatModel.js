@@ -1,6 +1,4 @@
-/**
- * Hat Model - Üretim hattı tablosu işlemleri
- */
+
 const BaseModel = require('./BaseModel');
 
 class HatModel extends BaseModel {

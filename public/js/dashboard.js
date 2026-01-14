@@ -1,6 +1,4 @@
-/**
- * Dashboard JavaScript - Main Dashboard Charts & KPIs
- */
+
 
 document.addEventListener('DOMContentLoaded', () => {
     loadKPIs();

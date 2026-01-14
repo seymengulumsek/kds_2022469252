@@ -1,6 +1,4 @@
-/**
- * Tedarikçi Maliyet Model - Maliyet verileri (3NF ayrı tablo)
- */
+
 const BaseModel = require('./BaseModel');
 
 class TedarikciMaliyetModel extends BaseModel {
@@ -8,7 +6,7 @@ class TedarikciMaliyetModel extends BaseModel {
         super('tedarikci_maliyet', 'maliyet_id');
     }
 
-    // Maliyet trendi
+
     async getTrend() {
         return this.query(`
             SELECT 
@@ -24,7 +22,7 @@ class TedarikciMaliyetModel extends BaseModel {
         `);
     }
 
-    // Fiyat karşılaştırması
+
     async getFiyatKarsilastirma(yil = 2024) {
         return this.query(`
             SELECT 
@@ -39,7 +37,7 @@ class TedarikciMaliyetModel extends BaseModel {
         `, [yil]);
     }
 
-    // Çelik fiyat endeksi trendi
+
     async getCelikEndeksTrendi() {
         return this.query(`
             SELECT t.yil, t.ay, AVG(m.celik_fiyat_endeksi) AS endeks

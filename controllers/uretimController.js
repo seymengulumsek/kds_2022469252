@@ -1,18 +1,15 @@
-/**
- * Üretim Controller - Historical + Forecast
- * %100 DB-first + Parametre bağımlı tahmin
- */
+
 const models = require('../models');
 const { asyncHandler } = require('../middleware');
 const { createResponse, createEmptyResponse } = require('../utils/responseHelper');
 const ForecastHelper = require('../utils/forecastHelper');
 
 const UretimController = {
-    // GET /api/uretim/historical - Geçmiş verileri al
+
     getHistorical: asyncHandler(async (req, res) => {
         const startYear = parseInt(req.query.startYear) || 2016;
         const endYear = parseInt(req.query.endYear) || 2025;
-        const gucTipi = req.query.gucTipi || 'all'; // 'ICE', 'EV', 'all'
+        const gucTipi = req.query.gucTipi || 'all';
 
         let data;
         if (gucTipi === 'all') {
@@ -22,7 +19,7 @@ const UretimController = {
             data = data.filter(d => d.guc_tipi === gucTipi);
         }
 
-        // Yıl filtresi
+
         data = data.filter(d => d.yil >= startYear && d.yil <= endYear);
 
         if (!data || data.length === 0) {
@@ -40,7 +37,7 @@ const UretimController = {
         });
     }),
 
-    // POST /api/uretim/forecast - Tahmin hesapla
+
     getForecast: asyncHandler(async (req, res) => {
         const {
             months = 12,
@@ -49,7 +46,7 @@ const UretimController = {
             scenario = 'realistic'
         } = req.body;
 
-        // DB'den son yılın verilerini al
+
         const latestData = await models.uretimTalep.getTrendByYakitTipi();
         if (!latestData || latestData.length === 0) {
             return res.json({
@@ -59,18 +56,18 @@ const UretimController = {
             });
         }
 
-        // Son yılı bul
+
         const lastYear = Math.max(...latestData.map(d => d.yil));
         const lastYearData = latestData.filter(d => d.yil === lastYear);
 
-        // ICE ve EV için son değerleri al
+
         const iceData = lastYearData.filter(d => d.guc_tipi === 'ICE');
         const evData = lastYearData.filter(d => d.guc_tipi === 'EV');
 
         const iceBase = iceData.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
         const evBase = evData.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
 
-        // Tahminleri hesapla
+
         const iceForecast = ForecastHelper.compound(iceBase, iceChangePercent, months);
         const evForecast = ForecastHelper.compound(evBase, evChangePercent, months);
 
@@ -89,7 +86,7 @@ const UretimController = {
         });
     }),
 
-    // GET /api/uretim/trend - Legacy - yıllık trend
+
     getTrend: asyncHandler(async (req, res) => {
         const data = await models.uretimTalep.getTrendByYakitTipi();
         if (!data || data.length === 0) {
@@ -98,7 +95,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'model', 'tarih']));
     }),
 
-    // GET /api/uretim/kapasite
+
     getKapasite: asyncHandler(async (req, res) => {
         const data = await models.uretimTalep.getKapasiteKullanimi();
         if (!data || data.length === 0) {
@@ -107,7 +104,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'hat', 'tarih']));
     }),
 
-    // GET /api/uretim/son
+
     getSonYil: asyncHandler(async (req, res) => {
         const yil = parseInt(req.query.yil) || 2025;
         const data = await models.uretimTalep.getSonYil(yil);
@@ -117,7 +114,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep']));
     }),
 
-    // GET /api/uretim/model-bazli
+
     getModelBazli: asyncHandler(async (req, res) => {
         const yil = parseInt(req.query.yil) || 2025;
         const data = await models.uretimTalep.getModelBazli(yil);
@@ -127,7 +124,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'model']));
     }),
 
-    // GET /api/uretim/hat-bazli  
+
     getHatBazli: asyncHandler(async (req, res) => {
         const yil = parseInt(req.query.yil) || 2025;
         const data = await models.uretimTalep.getHatBazli(yil);
@@ -137,7 +134,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'hat']));
     }),
 
-    // GET /api/uretim/yillik-karsilastirma
+
     getYillikKarsilastirma: asyncHandler(async (req, res) => {
         const data = await models.uretimTalep.getYillikKarsilastirma();
         if (!data || data.length === 0) {
@@ -146,7 +143,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'tarih']));
     }),
 
-    // GET /api/uretim/kapasite-yeterlilik
+
     getKapasiteYeterlilik: asyncHandler(async (req, res) => {
         const yil = parseInt(req.query.yil) || 2025;
         const data = await models.uretimTalep.getKapasiteYeterlilik(yil);
@@ -156,7 +153,7 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'hat', 'tarih']));
     }),
 
-    // GET /api/uretim/hat-arac-dagilim
+
     getHatAracDagilim: asyncHandler(async (req, res) => {
         const yil = parseInt(req.query.yil) || 2025;
         const data = await models.uretimTalep.getHatAracTipiDagilim(yil);
@@ -166,13 +163,13 @@ const UretimController = {
         res.json(createResponse(data, ['uretim_talep', 'hat', 'model', 'tarih']));
     }),
 
-    // GET /api/uretim/trend-ozet - Grafik altı özet bilgiler için
-    // Basit yaklaşım: mevcut yıllık verileri çekip JavaScript'te hesapla
+
+
     getTrendOzet: asyncHandler(async (req, res) => {
         const startYear = parseInt(req.query.startYear) || 2016;
         const endYear = parseInt(req.query.endYear) || 2025;
 
-        // Mevcut trend verisini çek (zaten çalışan sorgu)
+
         let data = await models.uretimTalep.getTrendByYakitTipi();
 
         if (!data || data.length === 0) {
@@ -186,10 +183,10 @@ const UretimController = {
             });
         }
 
-        // Yıl aralığına filtrele
+
         data = data.filter(d => d.yil >= startYear && d.yil <= endYear);
 
-        // ICE ve EV için ayrı hesaplama
+
         const calculateChange = (gucTipi) => {
             const filtered = data.filter(d => d.guc_tipi === gucTipi);
             const years = [...new Set(filtered.map(d => d.yil))].sort((a, b) => a - b);
@@ -233,7 +230,7 @@ const UretimController = {
         });
     }),
 
-    // GET /api/uretim/yil-listesi - Veritabanındaki mevcut yılları döndür
+
     getYilListesi: asyncHandler(async (req, res) => {
         const yillar = await models.tarih.query(`
             SELECT DISTINCT yil FROM tarih ORDER BY yil

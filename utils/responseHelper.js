@@ -1,7 +1,4 @@
-/**
- * Response Helper - API cevaplarına meta ekler
- * Veri kaynağı doğrulama için zorunlu
- */
+
 
 const createResponse = (data, tables = [], options = {}) => {
     const rowCount = Array.isArray(data) ? data.length : (data ? 1 : 0);

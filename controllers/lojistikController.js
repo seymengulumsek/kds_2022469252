@@ -1,6 +1,4 @@
-/**
- * Lojistik Controller - Historical + Forecast
- */
+
 const models = require('../models');
 const { asyncHandler } = require('../middleware');
 const { createResponse, createEmptyResponse } = require('../utils/responseHelper');
@@ -70,7 +68,7 @@ const LojistikController = {
         res.json(createResponse(data, ['intralojistik', 'tarih']));
     }),
 
-    // AGV Kazanc Analizi - 4. Grafik icin
+
     getAgvKazancAnalizi: asyncHandler(async (req, res) => {
         const data = await models.intralojistik.getAgvKazancAnalizi();
 
@@ -81,7 +79,7 @@ const LojistikController = {
         });
     }),
 
-    // SENARYO ANALIZI - Parametreli hesaplama
+
     getSenaryo: asyncHandler(async (req, res) => {
         const params = {
             forkliftSayisi: parseInt(req.body.forkliftSayisi) || 10,

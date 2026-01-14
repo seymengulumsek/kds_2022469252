@@ -1,7 +1,4 @@
-/**
- * Base Model - Temel veritabanı işlemleri
- * Tüm modeller bu sınıftan türetilir
- */
+
 
 const db = require('../config/database');
 
@@ -11,7 +8,7 @@ class BaseModel {
         this.primaryKey = primaryKey;
     }
 
-    // SELECT ALL
+
     async getAll() {
         const sql = `SELECT * FROM ${this.tableName}`;
         try {
@@ -23,7 +20,7 @@ class BaseModel {
         }
     }
 
-    // SELECT BY ID
+
     async getById(id) {
         const sql = `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
         try {
@@ -35,7 +32,7 @@ class BaseModel {
         }
     }
 
-    // INSERT
+
     async insert(data) {
         const columns = Object.keys(data).join(', ');
         const placeholders = Object.keys(data).map(() => '?').join(', ');
@@ -50,7 +47,7 @@ class BaseModel {
         }
     }
 
-    // UPDATE
+
     async update(id, data) {
         const setClause = Object.keys(data).map(key => `${key} = ?`).join(', ');
         const values = [...Object.values(data), id];
@@ -64,7 +61,7 @@ class BaseModel {
         }
     }
 
-    // DELETE
+
     async delete(id) {
         const sql = `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
         try {
@@ -76,7 +73,7 @@ class BaseModel {
         }
     }
 
-    // FILTER
+
     async filter(conditions = {}) {
         let sql = `SELECT * FROM ${this.tableName}`;
         const values = [];
@@ -96,7 +93,7 @@ class BaseModel {
         }
     }
 
-    // Custom Query
+
     async query(sql, params = []) {
         try {
             const [rows] = await db.pool.query(sql, params);

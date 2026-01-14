@@ -1,7 +1,4 @@
-/**
- * Robot Bakım Model - Bakım ve arıza verileri
- * Veritabanı şemasına tam uyumlu - ROBOT_TIPI PARAMETRESİ DESTEKLİ
- */
+
 const BaseModel = require('./BaseModel');
 
 class RobotBakimModel extends BaseModel {
@@ -9,7 +6,7 @@ class RobotBakimModel extends BaseModel {
         super('robot_bakim', 'bakim_id');
     }
 
-    // Bakım trendi - PARAMETRELİ
+
     async getTrend(robotTipi = null) {
         let sql = `
             SELECT 
@@ -33,7 +30,7 @@ class RobotBakimModel extends BaseModel {
         return this.query(sql, params);
     }
 
-    // Robot karşılaştırma - PARAMETRELİ
+
     async karsilastir(robotTipi = null) {
         let sql = `
             SELECT 
@@ -55,7 +52,7 @@ class RobotBakimModel extends BaseModel {
         return this.query(sql, params);
     }
 
-    // Arıza trendi - PARAMETRELİ
+
     async getArizaTrend(robotTipi = null) {
         let sql = `
             SELECT 
@@ -76,7 +73,7 @@ class RobotBakimModel extends BaseModel {
         return this.query(sql, params);
     }
 
-    // Robot tipi dağılımı
+
     async getTipDagilim() {
         return this.query(`
             SELECT 
@@ -87,7 +84,7 @@ class RobotBakimModel extends BaseModel {
         `);
     }
 
-    // Yıllık maliyet - PARAMETRELİ
+
     async getMaliyetYillik(robotTipi = null) {
         let sql = `
             SELECT 
@@ -107,7 +104,7 @@ class RobotBakimModel extends BaseModel {
         sql += ` GROUP BY t.yil ORDER BY t.yil`;
         return this.query(sql, params);
     }
-    // Son bakım yıllarını getir (Her robot için)
+
     async getBakimGecmisi(robotTipi = null) {
         let sql = `
             SELECT DISTINCT

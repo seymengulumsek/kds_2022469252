@@ -1,9 +1,6 @@
-/**
- * Error Middleware - Merkezi Hata Yönetimi
- * Tüm API hatalarını tek noktadan yönetir
- */
 
-// Hata yakalama middleware
+
+
 const errorHandler = (err, req, res, next) => {
     console.error('❌ HATA:', {
         message: err.message,
@@ -13,7 +10,7 @@ const errorHandler = (err, req, res, next) => {
         timestamp: new Date().toISOString()
     });
 
-    // Veritabanı hataları
+
     if (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_FIELD_ERROR') {
         return res.status(500).json({
             success: false,
@@ -31,7 +28,7 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Validation hataları
+
     if (err.name === 'ValidationError') {
         return res.status(400).json({
             success: false,
@@ -41,7 +38,7 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Genel hata
+
     const statusCode = err.statusCode || 500;
     res.status(statusCode).json({
         success: false,
@@ -51,7 +48,7 @@ const errorHandler = (err, req, res, next) => {
     });
 };
 
-// 404 handler
+
 const notFoundHandler = (req, res) => {
     res.status(404).json({
         success: false,
@@ -72,14 +69,14 @@ const notFoundHandler = (req, res) => {
     });
 };
 
-// Async wrapper - async fonksiyonları try/catch'e sarar
+
 const asyncHandler = (fn) => {
     return (req, res, next) => {
         Promise.resolve(fn(req, res, next)).catch(next);
     };
 };
 
-// Custom error class
+
 class AppError extends Error {
     constructor(message, statusCode = 500) {
         super(message);

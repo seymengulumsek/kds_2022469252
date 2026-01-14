@@ -1,6 +1,4 @@
-/**
- * İstasyon Model - İş istasyonu tablosu işlemleri
- */
+
 const BaseModel = require('./BaseModel');
 
 class IstasyonModel extends BaseModel {

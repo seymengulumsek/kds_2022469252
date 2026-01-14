@@ -1,6 +1,4 @@
-/**
- * Model Model - Araç model tablosu işlemleri
- */
+
 const BaseModel = require('./BaseModel');
 
 class ModelModel extends BaseModel {

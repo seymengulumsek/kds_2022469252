@@ -1,6 +1,4 @@
-/**
- * Kaynak Controller - Historical + Forecast
- */
+
 const models = require('../models');
 const { asyncHandler } = require('../middleware');
 const { createResponse, createEmptyResponse } = require('../utils/responseHelper');
@@ -61,8 +59,8 @@ const KaynakController = {
         res.json(createResponse(data, ['kaynak_kalitesi']));
     }),
 
-    // Robot bazlı scrap trendi - Çoklu çizgi grafik için
-    // GERÇEK SCRAP ADET DEĞERLERİ (oran değil)
+
+
     getRobotScrapTrendi: asyncHandler(async (req, res) => {
         const startYear = parseInt(req.query.startYear) || 2016;
         const endYear = parseInt(req.query.endYear) || 2025;
@@ -70,11 +68,11 @@ const KaynakController = {
         const data = await models.kaynakKalitesi.getRobotScrapTrendi(startYear, endYear);
         if (!data?.length) return res.json(createEmptyResponse(['kaynak_kalitesi', 'robot', 'tarih']));
 
-        // Veriyi grafik için organize et
+
         const yillar = [...new Set(data.map(d => d.yil))].sort();
         const robotlar = [...new Set(data.map(d => d.robot_kodu))].sort();
 
-        // Her robot için seri oluştur - GERÇEK ADET DEĞERLERİ
+
         const seriler = {};
         const degisimler = {};
 
@@ -82,11 +80,11 @@ const KaynakController = {
             const robotVerileri = data.filter(d => d.robot_kodu === robot);
             seriler[robot] = yillar.map(yil => {
                 const row = robotVerileri.find(d => d.yil === yil);
-                // SCRAP ORANI yüzdelik değeri (0.25%, 0.20% gibi)
+
                 return row ? parseFloat(row.ort_scrap_orani) || 0 : 0;
             });
 
-            // Yüzde değişim hesapla (scrap oranı üzerinden)
+
             const scraplar = seriler[robot].filter(s => s > 0);
             if (scraplar.length >= 2) {
                 let toplamDegisim = 0;
@@ -115,15 +113,15 @@ const KaynakController = {
         });
     }),
 
-    // Senaryo simülasyonu
+
     getScrapSenaryo: asyncHandler(async (req, res) => {
         const { robotOranlar = {} } = req.body;
 
-        // Son yıl scrap değerlerini al
+
         const sonYilData = await models.kaynakKalitesi.getSonYilScrap();
         if (!sonYilData?.length) return res.json(createEmptyResponse(['kaynak_kalitesi']));
 
-        // Senaryo hesapla
+
         const sonuclar = sonYilData.map(robot => {
             const mevcutScrap = parseFloat(robot.son_scrap) || 0;
             const oran = robotOranlar[robot.robot_kodu] || 0;
@@ -138,7 +136,7 @@ const KaynakController = {
             };
         });
 
-        // Toplam özet
+
         const toplamMevcut = sonuclar.reduce((a, b) => a + b.mevcut_scrap, 0);
         const toplamTahmini = sonuclar.reduce((a, b) => a + b.tahmini_scrap, 0);
 
@@ -157,29 +155,29 @@ const KaynakController = {
         });
     }),
 
-    // Robot listesi
+
     getRobotListesi: asyncHandler(async (req, res) => {
         const data = await models.kaynakKalitesi.getRobotListesi();
         if (!data?.length) return res.json(createEmptyResponse(['robot']));
         res.json(createResponse(data, ['robot']));
     }),
 
-    // Scrap kazanım senaryosu - robot bazlı maliyet ve senaryo hesabı
+
     getScrapKazanimSenaryo: asyncHandler(async (req, res) => {
         const data = await models.kaynakKalitesi.getRobotScrapMaliyeti();
         if (!data?.length) return res.json(createEmptyResponse(['kaynak_kalitesi']));
 
-        // Toplam maliyet hesapla
+
         const toplamMaliyet = data.reduce((a, b) => a + parseFloat(b.toplam_maliyet || 0), 0);
 
-        // Senaryo hesapları (backend'de)
+
         const senaryolar = [
             { oran: 5, kazanim: Math.round(toplamMaliyet * 0.05) },
             { oran: 10, kazanim: Math.round(toplamMaliyet * 0.10) },
             { oran: 15, kazanim: Math.round(toplamMaliyet * 0.15) }
         ];
 
-        // Robot bazlı senaryo sonuçları
+
         const robotlar = data.map(robot => ({
             robot_kodu: robot.robot_kodu,
             toplam_maliyet: parseFloat(robot.toplam_maliyet) || 0,
@@ -195,16 +193,16 @@ const KaynakController = {
         });
     }),
 
-    // Bakım/Yatırım Karar Matrisi - Dinamik eşiklerle scatter plot
+
     getYatirimMatrisi: asyncHandler(async (req, res) => {
         const startYear = parseInt(req.query.startYear) || 2020;
         const endYear = parseInt(req.query.endYear) || 2025;
 
-        // Kaynak kalitesi verilerini al
+
         const data = await models.kaynakKalitesi.getRobotYatirimMatrisi(startYear, endYear);
         if (!data?.length) return res.json(createEmptyResponse(['kaynak_kalitesi']));
 
-        // Servis/bakım verilerini al
+
         let servisData = [];
         try {
             servisData = await models.tarih.query(`
@@ -219,23 +217,23 @@ const KaynakController = {
             console.log('Servis verisi alınamadı:', e.message);
         }
 
-        // Robot bazlı hesaplamalar
+
         const robotlar = [...new Set(data.map(d => d.robot_kodu))].sort();
         const hesaplamalar = robotlar.map(robot => {
             const robotVerileri = data.filter(d => d.robot_kodu === robot).sort((a, b) => a.yil - b.yil);
 
-            // Scrap maliyeti (son yıl)
+
             const sonYilVeri = robotVerileri[robotVerileri.length - 1];
             const scrapMaliyet = parseFloat(sonYilVeri?.toplam_maliyet || 0);
 
-            // Servis maliyeti
+
             const servisKayit = servisData.find(s => s.robot_kodu === robot);
             const servisMaliyet = parseFloat(servisKayit?.servis_maliyet || 0);
 
-            // Toplam yıllık maliyet
+
             const toplamMaliyet = scrapMaliyet + servisMaliyet;
 
-            // Yıllık scrap artış oranı hesapla (ortalama)
+
             let toplamDegisim = 0, sayac = 0;
             for (let i = 1; i < robotVerileri.length; i++) {
                 const onceki = parseFloat(robotVerileri[i - 1].toplam_scrap) || 0;
@@ -256,33 +254,33 @@ const KaynakController = {
             };
         });
 
-        // DİNAMİK EŞİKLER - Medyan bazlı hesaplama
+
         const maliyetler = hesaplamalar.map(h => h.toplam_maliyet).sort((a, b) => a - b);
         const artislar = hesaplamalar.map(h => h.scrap_artis_orani).sort((a, b) => a - b);
 
         const maliyetMedian = maliyetler.length > 0 ? maliyetler[Math.floor(maliyetler.length / 2)] : 500000;
         const artisMedian = artislar.length > 0 ? artislar[Math.floor(artislar.length / 2)] : 5;
 
-        // Bölge atama ve öneri
+
         const sonuc = hesaplamalar.map(h => {
             let bolge = '', oneri = '', renk = '';
 
             if (h.scrap_artis_orani < artisMedian && h.toplam_maliyet < maliyetMedian) {
                 bolge = 'STABİL';
                 oneri = 'Sistem stabil - Rutin takip yeterli';
-                renk = '#28A745'; // Yeşil
+                renk = '#28A745';
             } else if (h.scrap_artis_orani >= artisMedian && h.toplam_maliyet < maliyetMedian) {
                 bolge = 'BAKIM & SÜREÇ İYİLEŞTİRME';
                 oneri = 'Bakım planlaması ve süreç iyileştirme önerilir';
-                renk = '#FFC107'; // Sarı
+                renk = '#FFC107';
             } else if (h.scrap_artis_orani < artisMedian && h.toplam_maliyet >= maliyetMedian) {
                 bolge = 'MALİYET TAKİBİ';
                 oneri = 'Maliyet yüksek ama stabil - Veri takibi gerekli';
-                renk = '#17A2B8'; // Mavi
+                renk = '#17A2B8';
             } else {
                 bolge = 'YATIRIM / YENİLEME';
                 oneri = 'Robot yenileme veya büyük yatırım değerlendirilmeli';
-                renk = '#DC3545'; // Kırmızı
+                renk = '#DC3545';
             }
 
             return {
@@ -293,7 +291,7 @@ const KaynakController = {
             };
         });
 
-        // Özet istatistikler
+
         const ozet = {
             stabil: sonuc.filter(r => r.bolge === 'STABİL').length,
             bakim: sonuc.filter(r => r.bolge === 'BAKIM & SÜREÇ İYİLEŞTİRME').length,
@@ -315,26 +313,26 @@ const KaynakController = {
         });
     }),
 
-    // Önümüzdeki yıl scrap kaynaklı zarar tahmini
+
     getScrapZararTahmini: asyncHandler(async (req, res) => {
         const degisimOrani = parseInt(req.query.degisimOrani) || 0;
 
         const data = await models.kaynakKalitesi.getSonYilScrapDetay();
         if (!data?.length) return res.json(createEmptyResponse(['kaynak_kalitesi']));
 
-        // Backend'de tüm hesaplamalar yapılıyor
+
         const robotlar = data.map(robot => {
             const mevcutScrapAdet = parseInt(robot.mevcut_scrap_adet) || 0;
             const birimMaliyet = parseFloat(robot.birim_maliyet) || 0;
             const mevcutToplam = parseFloat(robot.mevcut_toplam_maliyet) || 0;
 
-            // Tahmini scrap adeti hesapla
+
             const tahminiScrapAdet = Math.round(mevcutScrapAdet * (1 + degisimOrani / 100));
 
-            // Tahmini yıllık zarar hesapla
+
             const tahminiYillikZarar = Math.round(tahminiScrapAdet * birimMaliyet * 100) / 100;
 
-            // Fark hesapla (pozitif = zarar artışı, negatif = tasarruf)
+
             const fark = Math.round((tahminiYillikZarar - mevcutToplam) * 100) / 100;
 
             return {
@@ -349,7 +347,7 @@ const KaynakController = {
             };
         });
 
-        // Toplam özet
+
         const toplamMevcutZarar = robotlar.reduce((a, b) => a + b.mevcut_toplam_maliyet, 0);
         const toplamTahminiZarar = robotlar.reduce((a, b) => a + b.tahmini_yillik_zarar, 0);
         const toplamFark = Math.round((toplamTahminiZarar - toplamMevcutZarar) * 100) / 100;
@@ -369,30 +367,30 @@ const KaynakController = {
         });
     }),
 
-    // Bakım/Yatırım Analiz Endpoint'i - Veritabanından gerçek veriler
+
     getBakimYatirimAnaliz: asyncHandler(async (req, res) => {
         const data = await models.kaynakKalitesi.getBakimYatirimAnaliz();
         if (!data?.length) return res.json(createEmptyResponse(['robot_bakim', 'kaynak_kalitesi']));
 
-        // Verileri frontend için hazırla
+
         const robotlar = data.map(robot => ({
             robot_id: robot.robot_id,
             robot_kodu: robot.robot_kodu,
-            // Bakım verileri
+
             bakim_maliyeti: parseFloat(robot.bakim_maliyeti) || 0,
             ort_bakim_maliyeti: parseFloat(robot.ort_bakim_maliyeti) || 0,
             ariza_sayisi: parseInt(robot.ariza_sayisi) || 0,
-            // Yatırım verileri
+
             yatirim_maliyeti: parseFloat(robot.yatirim_maliyeti) || 0,
-            // Scrap verileri
+
             yillik_scrap_adet: parseInt(robot.yillik_scrap_adet) || 0,
             yillik_scrap_maliyeti: parseFloat(robot.yillik_scrap_maliyeti) || 0,
-            // İyileşme oranları
+
             bakim_iyilesme_orani: parseInt(robot.bakim_iyilesme_orani) || 15,
             yatirim_iyilesme_orani: parseInt(robot.yatirim_iyilesme_orani) || 35
         }));
 
-        // Özet istatistikler
+
         const ozet = {
             toplamBakimMaliyeti: robotlar.reduce((a, b) => a + b.bakim_maliyeti, 0),
             toplamYatirimMaliyeti: robotlar.reduce((a, b) => a + b.yatirim_maliyeti, 0),
@@ -408,29 +406,29 @@ const KaynakController = {
         });
     }),
 
-    // Robot Bakım Geçmişi (Son 3 Bakım Yılı)
+
     getRobotBakimGecmisi: asyncHandler(async (req, res) => {
-        // SADECE KAYNAK ROBOTLARI
+
         const rawData = await models.robotBakim.getBakimGecmisi('KAYNAK');
 
-        // Veriyi işle: Her robot için son 3 yılı al
+
         const grouped = {};
         rawData.forEach(item => {
             if (!grouped[item.robot_kodu]) {
                 grouped[item.robot_kodu] = [];
             }
-            // Sadece benzersiz yılları ekle ve 3 taneyle sınırla
+
             if (!grouped[item.robot_kodu].includes(item.yil) && grouped[item.robot_kodu].length < 3) {
                 grouped[item.robot_kodu].push(item.yil);
             }
         });
 
-        // Grafik formatına dönüştür (Scatter Chart için {x: yil, y: robot} formatı uygun olabilir, 
-        // ama Chart.js Scatter string y-axis'i zor destekler.
-        // O yüzden Bubble veya Line (nokta) kullanacağız. 
-        // Basitlik için Robotları Y eksenine dizeceğiz (Category Axis), Yılları X eksenine.
 
-        const robotList = Object.keys(grouped).sort(); // Y ekseni etiketleri
+
+
+
+
+        const robotList = Object.keys(grouped).sort();
         const datasets = [{
             label: 'Bakım Yapılan Yıllar',
             data: [],
@@ -445,7 +443,7 @@ const KaynakController = {
             years.forEach(year => {
                 datasets[0].data.push({
                     x: year,
-                    y: robot // Chart.js otomatik olarak category axis ile eşleştirir
+                    y: robot
                 });
             });
         });
@@ -454,7 +452,7 @@ const KaynakController = {
             success: true,
             data: {
                 datasets,
-                labels: robotList // Y ekseni kategorileri için gerekli
+                labels: robotList
             }
         });
     }),

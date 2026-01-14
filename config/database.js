@@ -1,7 +1,4 @@
-/**
- * MySQL Database Configuration
- * WAMP Server Ayarları
- */
+
 
 const mysql = require('mysql2');
 require('dotenv').config();

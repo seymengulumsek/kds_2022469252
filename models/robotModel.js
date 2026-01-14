@@ -1,6 +1,4 @@
-/**
- * Robot Model - Robot tablosu işlemleri
- */
+
 const BaseModel = require('./BaseModel');
 
 class RobotModel extends BaseModel {

@@ -1,7 +1,4 @@
-/**
- * Kaynak Kalitesi Model - Kaynak kalitesi verileri
- * Veritabanı şemasına tam uyumlu: olcum_degeri, sapma_orani, scrap_orani
- */
+
 const BaseModel = require('./BaseModel');
 
 class KaynakKalitesiModel extends BaseModel {
@@ -9,7 +6,7 @@ class KaynakKalitesiModel extends BaseModel {
         super('kaynak_kalitesi', 'kaynak_id');
     }
 
-    // Kalite trendi
+
     async getTrend() {
         return this.query(`
             SELECT 
@@ -26,7 +23,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Scrap trendi
+
     async getScrapTrend() {
         return this.query(`
             SELECT 
@@ -39,7 +36,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Sapma trendi
+
     async getSapmaTrend() {
         return this.query(`
             SELECT 
@@ -52,7 +49,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Robot bazlı
+
     async getRobotBazli() {
         return this.query(`
             SELECT 
@@ -67,7 +64,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Performans dağılımı
+
     async getPerformansDagilim(yil = 2025) {
         return this.query(`
             SELECT 
@@ -81,8 +78,8 @@ class KaynakKalitesiModel extends BaseModel {
         `, [yil]);
     }
 
-    // Robot bazlı scrap trendi - Çoklu çizgi grafik için
-    // SCRAP ORANI DEĞERLERİ (0.25%, 0.20% gibi)
+
+
     async getRobotScrapTrendi(startYear = 2016, endYear = 2025) {
         return this.query(`
             SELECT 
@@ -99,7 +96,7 @@ class KaynakKalitesiModel extends BaseModel {
         `, [startYear, endYear]);
     }
 
-    // Robot listesi (senaryo için)
+
     async getRobotListesi() {
         return this.query(`
             SELECT DISTINCT 
@@ -111,7 +108,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Son yıl scrap ortalamaları (senaryo baz değeri)
+
     async getSonYilScrap() {
         return this.query(`
             SELECT 
@@ -127,7 +124,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Robot bazlı yıllık toplam scrap maliyeti (kazanım senaryosu için)
+
     async getRobotScrapMaliyeti() {
         return this.query(`
             SELECT 
@@ -143,7 +140,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Robot bazlı scrap artış hızı ve maliyet (yatırım matrisi için)
+
     async getRobotYatirimMatrisi(startYear = 2016, endYear = 2025) {
         return this.query(`
             SELECT 
@@ -161,7 +158,7 @@ class KaynakKalitesiModel extends BaseModel {
         `, [startYear, endYear]);
     }
 
-    // Önümüzdeki yıl scrap kaynaklı zarar tahmini için veri
+
     async getSonYilScrapDetay() {
         return this.query(`
             SELECT 
@@ -179,7 +176,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Robot bazlı bakım maliyetleri (robot_bakim tablosundan)
+
     async getRobotBakimMaliyetleri() {
         return this.query(`
             SELECT 
@@ -198,7 +195,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Robot bazlı beklenen iyileşme oranları (scrap azalma trendi analizi)
+
     async getRobotIyilesmeVerisi() {
         return this.query(`
             SELECT 
@@ -218,7 +215,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Robot bazlı yatırım maliyeti tahmini (bakım maliyetinin 4-6 katı olarak hesaplanır)
+
     async getRobotYatirimMaliyetleri() {
         return this.query(`
             SELECT 
@@ -236,7 +233,7 @@ class KaynakKalitesiModel extends BaseModel {
         `);
     }
 
-    // Tam bakım/yatırım analiz verisi (frontend için tek endpoint)
+
     async getBakimYatirimAnaliz() {
         return this.query(`
             SELECT 

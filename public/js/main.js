@@ -1,7 +1,4 @@
-/**
- * Mercedes-Benz KDS - Main JavaScript Library v2.1
- * Dinamik analiz, parametre değişim takibi, grafik yenileme, hata yakalama
- */
+
 
 const KDS = {
     apiBase: '/api',
@@ -9,7 +6,7 @@ const KDS = {
     currentPage: null,
     isLoading: false,
 
-    // Sayfa soruları
+
     pageQuestions: {
         'dashboard': {
             title: 'Executive Dashboard',
@@ -68,7 +65,7 @@ const KDS = {
         palette: ['#000000', '#495057', '#6C757D', '#ADB5BD', '#343A40']
     },
 
-    // ===== SAYFA BAŞLATMA =====
+
     init(pageName) {
         this.currentPage = pageName;
         this.setActivePage(pageName);
@@ -97,7 +94,7 @@ const KDS = {
         });
     },
 
-    // ===== SORU İKONU VE MODAL =====
+
     createInfoButton(pageName) {
         if (document.getElementById('infoButton')) return;
 
@@ -147,7 +144,7 @@ const KDS = {
         document.getElementById('questionModal').classList.remove('active');
     },
 
-    // ===== GRAFİK TİPİ SEÇİCİ =====
+
     setupChartTypeSelectors() {
         document.querySelectorAll('.chart-type-select').forEach(select => {
             select.removeEventListener('change', this.handleChartTypeChange);
@@ -161,13 +158,13 @@ const KDS = {
         this.changeChartType(chartId, newType);
     },
 
-    // ===== API İSTEKLERİ + META DOĞRULAMA =====
-    dataSourceLog: {}, // Veri kaynağı takibi
+
+    dataSourceLog: {},
 
     async fetchData(endpoint, params = {}) {
         try {
             const queryString = new URLSearchParams(params).toString();
-            // Eğer endpoint zaten / ile başlıyorsa tam URL olarak kullan, yoksa apiBase ekle
+
             const baseUrl = endpoint.startsWith('/') ? endpoint : `${this.apiBase}${endpoint}`;
             const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
 
@@ -188,7 +185,7 @@ const KDS = {
                 return null;
             }
 
-            // META DOĞRULAMA
+
             if (result.meta) {
                 const validation = this.validateDataSource(result.meta, endpoint);
                 this.dataSourceLog[endpoint] = validation;
@@ -209,13 +206,13 @@ const KDS = {
         }
     },
 
-    // Veri kaynağı doğrulama
+
     validateDataSource(meta, endpoint) {
         if (!meta) return { valid: false, error: 'Meta bilgisi yok' };
         if (meta.source !== 'mysql') return { valid: false, error: `Kaynak DB değil: ${meta.source}` };
         if (meta.generated === true) return { valid: false, error: 'Veri kod ile üretilmiş (YASAK)' };
 
-        // rowCount veya historicalRows kabul et
+
         const rowCount = meta.rowCount ?? meta.historicalRows ?? 0;
 
         return {
@@ -227,7 +224,7 @@ const KDS = {
         };
     },
 
-    // Veri kaynağı raporu
+
     getDataSourceReport() {
         return this.dataSourceLog;
     },
@@ -253,7 +250,7 @@ const KDS = {
         }
     },
 
-    // ===== DİNAMİK ANALİZ =====
+
     async loadAnalysis(scenario, params = {}) {
         this.showAnalysisLoading();
 
@@ -291,7 +288,7 @@ const KDS = {
         }
     },
 
-    // ===== GRAFİK YÖNETİMİ =====
+
     showChartLoading(canvasId) {
         const canvas = document.getElementById(canvasId);
         if (canvas && canvas.parentElement) {
@@ -323,7 +320,7 @@ const KDS = {
 
         this.hideChartLoading(canvasId);
 
-        // Mevcut grafiği temizle
+
         if (this.charts[canvasId]) {
             try {
                 this.charts[canvasId].destroy();
@@ -333,7 +330,7 @@ const KDS = {
             }
         }
 
-        // Veri kontrolü
+
         if (!config.data || !config.data.datasets || config.data.datasets.length === 0) {
             this.showNoData(canvasId);
             return null;
@@ -400,14 +397,14 @@ const KDS = {
         const canvas = document.getElementById(canvasId);
         if (canvas && canvas.parentElement) {
             const container = canvas.parentElement;
-            // Canvas'ı gizle
+
             canvas.style.display = 'none';
 
-            // Mevcut no-data'yı kaldır
+
             const existing = container.querySelector('.no-data');
             if (existing) existing.remove();
 
-            // Yeni no-data mesajı
+
             const noData = document.createElement('div');
             noData.className = 'no-data';
             noData.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:#DC3545;';
@@ -453,7 +450,7 @@ const KDS = {
         }
     },
 
-    // ===== TÜMÜNÜ YENİLE =====
+
     async refreshAllCharts(loadFunctions) {
         for (const chartId of Object.keys(this.charts)) {
             this.showChartLoading(chartId);
@@ -468,7 +465,7 @@ const KDS = {
         }
     },
 
-    // ===== KPI GÜNCELLEMELERİ =====
+
     updateKPI(elementId, value, unit = '') {
         const el = document.getElementById(elementId);
         if (el) {
@@ -480,7 +477,7 @@ const KDS = {
         }
     },
 
-    // ===== DETAY MODAL =====
+
     openDetailModal(title, data, chartData) {
         let modal = document.getElementById('detailModal');
         if (!modal) {
@@ -543,7 +540,7 @@ const KDS = {
         if (modal) modal.classList.remove('active');
     },
 
-    // ===== YARDIMCI FONKSİYONLAR =====
+
     formatNumber(num, decimals = 0) {
         if (num === null || num === undefined || isNaN(num)) return '-';
         return new Intl.NumberFormat('tr-TR', {
@@ -560,7 +557,7 @@ const KDS = {
         }
     },
 
-    // Parametre değişimlerini izle
+
     watchParameter(elementId, callback, debounceMs = 300) {
         const element = document.getElementById(elementId);
         if (!element) return;
@@ -579,7 +576,7 @@ const KDS = {
         element.addEventListener('change', handleChange);
     },
 
-    // Slider değer gösterimi güncelle
+
     setupSlider(sliderId, valueId, formatFn, onChangeFn) {
         const slider = document.getElementById(sliderId);
         const valueEl = document.getElementById(valueId);
@@ -598,9 +595,9 @@ const KDS = {
             if (onChangeFn) onChangeFn(slider.value);
         });
 
-        updateValue(); // Initial
+        updateValue();
     }
 };
 
-// Global erişim
+
 window.KDS = KDS;

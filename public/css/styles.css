@@ -1,7 +1,4 @@
-/**
- * Mercedes-Benz KDS - Professional Black & White Theme
- * Kurumsal Siyah-Beyaz Tasarım
- */
+
 
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
@@ -41,13 +38,13 @@ body {
     min-height: 100vh;
 }
 
-/* ===== LAYOUT STRUCTURE ===== */
+
 .app-container {
     display: flex;
     min-height: 100vh;
 }
 
-/* ===== SIDEBAR ===== */
+
 .sidebar {
     width: var(--sidebar-width);
     background: var(--black);
@@ -57,14 +54,14 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     z-index: 1000;
-    /* Scrollbar'ı gizle ama scroll yapılabilsin */
+    
     scrollbar-width: none;
-    /* Firefox */
+    
     -ms-overflow-style: none;
-    /* IE/Edge */
+    
 }
 
-/* Webkit (Chrome, Safari) için scrollbar gizle */
+
 .sidebar::-webkit-scrollbar {
     display: none;
     width: 0;
@@ -148,7 +145,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* ===== MAIN CONTENT ===== */
+
 .main-content {
     flex: 1;
     margin-left: var(--sidebar-width);
@@ -157,7 +154,7 @@ body {
     flex-direction: column;
 }
 
-/* ===== HEADER ===== */
+
 .header {
     background: var(--black);
     color: var(--white);
@@ -186,7 +183,7 @@ body {
     color: var(--gray-400);
 }
 
-/* ===== PAGE CONTENT ===== */
+
 .page-content {
     flex: 1;
     padding: 1.5rem 2rem;
@@ -210,7 +207,7 @@ body {
     font-size: 0.95rem;
 }
 
-/* ===== KPI CARDS ===== */
+
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -275,7 +272,7 @@ body {
     color: var(--danger);
 }
 
-/* ===== CHART CARDS ===== */
+
 .chart-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -354,7 +351,7 @@ body {
     border-radius: 0 0 8px 8px;
 }
 
-/* ===== CONTROLS ===== */
+
 .controls {
     background: var(--white);
     border: 2px solid var(--black);
@@ -419,7 +416,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* ===== BUTTONS ===== */
+
 .btn {
     padding: 0.6rem 1.25rem;
     border: none;
@@ -450,7 +447,7 @@ body {
     color: var(--white);
 }
 
-/* ===== ANALYSIS BOX ===== */
+
 .analysis-box {
     background: var(--black);
     color: var(--white);
@@ -485,7 +482,7 @@ body {
     border-left: 3px solid var(--white);
 }
 
-/* ===== DATA TABLE ===== */
+
 .data-table-wrapper {
     background: var(--white);
     border: 2px solid var(--black);
@@ -520,7 +517,7 @@ body {
     background: var(--gray-100);
 }
 
-/* ===== FOOTER ===== */
+
 .footer {
     background: var(--black);
     color: var(--gray-500);
@@ -530,7 +527,7 @@ body {
     margin-top: auto;
 }
 
-/* ===== MODAL ===== */
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -582,7 +579,7 @@ body {
     padding: 1.5rem;
 }
 
-/* ===== LOADING ===== */
+
 .loading {
     display: flex;
     justify-content: center;
@@ -605,7 +602,7 @@ body {
     }
 }
 
-/* ===== RESPONSIVE ===== */
+
 @media (max-width: 1024px) {
     .sidebar {
         width: 200px;
@@ -638,7 +635,7 @@ body {
     }
 }
 
-/* ===== INFO BUTTON (SORU İKONU) ===== */
+
 .info-button {
     position: fixed;
     top: 80px;
@@ -665,7 +662,7 @@ body {
     background: var(--gray-800);
 }
 
-/* ===== QUESTION MODAL ===== */
+
 .question-modal {
     position: fixed;
     top: 0;
@@ -755,7 +752,7 @@ body {
     color: var(--gray-700);
 }
 
-/* ===== ERROR MESSAGE ===== */
+
 .error-message {
     background: rgba(220, 53, 69, 0.1);
     border: 1px solid var(--danger);
@@ -770,7 +767,7 @@ body {
     content: "⚠️ ";
 }
 
-/* ===== NO DATA PLACEHOLDER ===== */
+
 .no-data {
     display: flex;
     flex-direction: column;
@@ -789,7 +786,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* ===== LOADING OVERLAY ===== */
+
 .loading-overlay {
     position: absolute;
     top: 0;
@@ -803,7 +800,7 @@ body {
     z-index: 10;
 }
 
-/* ===== ANALYSIS STATUS COLORS ===== */
+
 .analysis-box.success {
     border-left: 4px solid var(--success);
 }
@@ -816,7 +813,7 @@ body {
     border-left: 4px solid var(--danger);
 }
 
-/* ===== CHART TOOLTIP ===== */
+
 .chart-tooltip {
     position: absolute;
     background: var(--black);
@@ -828,7 +825,7 @@ body {
     z-index: 100;
 }
 
-/* ===== PAGE HEADER WITH INFO BUTTON ===== */
+
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -845,7 +842,7 @@ body {
     gap: 0.5rem;
 }
 
-/* Hide chart source labels globally */
+
 .chart-source {
     display: none !important;
 }

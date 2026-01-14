@@ -1,21 +1,18 @@
-/**
- * Tedarikçi Controller - Historical + Forecast
- * %100 DB-first + Parametre bağımlı tahmin
- */
+
 const models = require('../models');
 const { asyncHandler } = require('../middleware');
 const { createResponse, createEmptyResponse } = require('../utils/responseHelper');
 const ForecastHelper = require('../utils/forecastHelper');
 
 const TedarikciController = {
-    // GET /api/tedarikci/historical - Geçmiş verileri al
+
     getHistorical: asyncHandler(async (req, res) => {
         const startYear = parseInt(req.query.startYear) || 2016;
         const endYear = parseInt(req.query.endYear) || 2025;
 
         let data = await models.tedarikciKalite.getTrend();
 
-        // Yıl filtresi
+
         data = data.filter(d => d.yil >= startYear && d.yil <= endYear);
 
         if (!data || data.length === 0) {
@@ -33,7 +30,7 @@ const TedarikciController = {
         });
     }),
 
-    // POST /api/tedarikci/forecast - Kalite tahmin
+
     getForecast: asyncHandler(async (req, res) => {
         const {
             months = 12,
@@ -41,7 +38,7 @@ const TedarikciController = {
             ppmChangePercent = -5
         } = req.body;
 
-        // DB'den son verileri al
+
         const latestData = await models.tedarikciKalite.getTrend();
         if (!latestData || latestData.length === 0) {
             return res.json({
@@ -51,14 +48,14 @@ const TedarikciController = {
             });
         }
 
-        // Son yılı bul
+
         const lastYear = Math.max(...latestData.map(d => d.yil));
         const lastYearData = latestData.filter(d => d.yil === lastYear);
 
         const avgQuality = lastYearData.reduce((sum, d) => sum + parseFloat(d.ort_kalite || 0), 0) / lastYearData.length;
         const avgPPM = lastYearData.reduce((sum, d) => sum + parseFloat(d.ort_ppm || 0), 0) / lastYearData.length;
 
-        // Tahminleri hesapla
+
         const qualityForecast = ForecastHelper.compound(avgQuality, qualityChangePercent, months);
         const ppmForecast = ForecastHelper.compound(avgPPM, ppmChangePercent, months);
 
@@ -75,7 +72,7 @@ const TedarikciController = {
         });
     }),
 
-    // GET /api/tedarikci/kalite - Kalite trendi
+
     getKaliteTrendi: asyncHandler(async (req, res) => {
         const data = await models.tedarikciKalite.getTrend();
         if (!data || data.length === 0) {
@@ -84,7 +81,7 @@ const TedarikciController = {
         res.json(createResponse(data, ['tedarikci_kalite', 'tedarikci', 'tarih']));
     }),
 
-    // GET /api/tedarikci/maliyet
+
     getMaliyetTrendi: asyncHandler(async (req, res) => {
         const data = await models.tedarikciMaliyet.getTrend();
         if (!data || data.length === 0) {
@@ -93,7 +90,7 @@ const TedarikciController = {
         res.json(createResponse(data, ['tedarikci_maliyet', 'tedarikci', 'tarih']));
     }),
 
-    // GET /api/tedarikci/karsilastir
+
     getKarsilastirma: asyncHandler(async (req, res) => {
         const kategori = req.query.kategori || 'Çelik';
         const data = await models.tedarikciKalite.getByKategori(kategori);
@@ -103,7 +100,7 @@ const TedarikciController = {
         res.json(createResponse(data, ['tedarikci_kalite', 'tedarikci']));
     }),
 
-    // GET /api/tedarikci/celik-endeks
+
     getCelikEndeks: asyncHandler(async (req, res) => {
         const data = await models.tedarikciMaliyet.getTrend();
         if (!data || data.length === 0) {
@@ -112,7 +109,7 @@ const TedarikciController = {
         res.json(createResponse(data, ['tedarikci_maliyet']));
     }),
 
-    // GET /api/tedarikci/son-durum
+
     getSonDurum: asyncHandler(async (req, res) => {
         const yil = parseInt(req.query.yil) || 2025;
         const data = await models.tedarikciKalite.getSonDurum(yil);
@@ -122,9 +119,9 @@ const TedarikciController = {
         res.json(createResponse(data, ['tedarikci_kalite', 'tedarikci']));
     }),
 
-    // ===== TEK TEDARİKÇİ BAZLI ENDPOINT'LER =====
 
-    // GET /api/tedarikci/liste - Tedarikçi listesi (dropdown için)
+
+
     getListe: asyncHandler(async (req, res) => {
         const data = await models.tedarikciKalite.getTedarikciListesi();
         if (!data || data.length === 0) {
@@ -133,7 +130,7 @@ const TedarikciController = {
         res.json({ success: true, data });
     }),
 
-    // GET /api/tedarikci/kalite-trendi/:id - Tek tedarikçi kalite trendi + özet
+
     getKaliteTrendiById: asyncHandler(async (req, res) => {
         const tedarikciId = parseInt(req.params.id);
         const startYear = parseInt(req.query.startYear) || 2016;
@@ -149,7 +146,7 @@ const TedarikciController = {
             return res.json({ success: true, data: [], ozet: { yilSayisi: 0, ortDegisim: 0 } });
         }
 
-        // Yıllık ortalama değişim hesapla (JavaScript'te)
+
         const changes = [];
         for (let i = 1; i < data.length; i++) {
             const prev = parseFloat(data[i - 1].kalite_skoru);
@@ -172,7 +169,7 @@ const TedarikciController = {
         });
     }),
 
-    // GET /api/tedarikci/ppm-trendi/:id - Tek tedarikçi PPM trendi + özet
+
     getPPMTrendiById: asyncHandler(async (req, res) => {
         const tedarikciId = parseInt(req.params.id);
         const startYear = parseInt(req.query.startYear) || 2016;
@@ -188,7 +185,7 @@ const TedarikciController = {
             return res.json({ success: true, data: [], ozet: { yilSayisi: 0, ortDegisim: 0 } });
         }
 
-        // Yıllık ortalama değişim hesapla
+
         const changes = [];
         for (let i = 1; i < data.length; i++) {
             const prev = parseFloat(data[i - 1].ppm_orani);
@@ -211,7 +208,7 @@ const TedarikciController = {
         });
     }),
 
-    // GET /api/tedarikci/servis-analizi/:id - Tek tedarikçi servis/garanti analizi
+
     getServisAnaliziById: asyncHandler(async (req, res) => {
         const tedarikciId = parseInt(req.params.id);
         const startYear = parseInt(req.query.startYear) || 2016;
@@ -227,7 +224,7 @@ const TedarikciController = {
             return res.json({ success: true, data: [], ozet: { garantiIciToplam: 0, garantiDisiToplam: 0 } });
         }
 
-        // Özet hesapla
+
         let garantiIciToplam = 0;
         let garantiDisiToplam = 0;
         data.forEach(d => {
@@ -249,7 +246,7 @@ const TedarikciController = {
         });
     }),
 
-    // GET /api/tedarikci/teslimat-gecikme/:id - Tek tedarikçi teslimat gecikme analizi
+
     getTeslimatGecikmeById: asyncHandler(async (req, res) => {
         const tedarikciId = parseInt(req.params.id);
         const startYear = parseInt(req.query.startYear) || 2016;
@@ -265,7 +262,7 @@ const TedarikciController = {
             return res.json({ success: true, data: [], ozet: { ortGecikme: 0 } });
         }
 
-        // Ortalama gecikme hesapla
+
         const gecikmeler = data.map(d => parseFloat(d.gecikme || 0));
         const ortGecikme = gecikmeler.length > 0
             ? Math.round((gecikmeler.reduce((a, b) => a + b, 0) / gecikmeler.length) * 100) / 100
@@ -281,7 +278,7 @@ const TedarikciController = {
         });
     }),
 
-    // GET /api/tedarikci/ozet/:id - Tek tedarikçi KPI özeti
+
     getOzetById: asyncHandler(async (req, res) => {
         const tedarikciId = parseInt(req.params.id);
         const yil = parseInt(req.query.yil) || 2025;

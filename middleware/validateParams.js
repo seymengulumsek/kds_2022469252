@@ -1,11 +1,8 @@
-/**
- * Validate Params Middleware - Parametre Doğrulama
- * Frontend'den gelen parametrelerin doğru formatta olup olmadığını kontrol eder
- */
+
 
 const { AppError } = require('./errorMiddleware');
 
-// Sayısal parametre doğrulama
+
 const validateNumeric = (fields) => {
     return (req, res, next) => {
         const params = { ...req.query, ...req.body };
@@ -32,7 +29,7 @@ const validateNumeric = (fields) => {
     };
 };
 
-// Zorunlu parametre doğrulama
+
 const validateRequired = (fields) => {
     return (req, res, next) => {
         const params = { ...req.query, ...req.body };
@@ -56,7 +53,7 @@ const validateRequired = (fields) => {
     };
 };
 
-// Aralık doğrulama
+
 const validateRange = (field, min, max) => {
     return (req, res, next) => {
         const params = { ...req.query, ...req.body };
@@ -76,7 +73,7 @@ const validateRange = (field, min, max) => {
     };
 };
 
-// Enum doğrulama
+
 const validateEnum = (field, allowedValues) => {
     return (req, res, next) => {
         const params = { ...req.query, ...req.body };
@@ -94,7 +91,7 @@ const validateEnum = (field, allowedValues) => {
     };
 };
 
-// Üretim parametreleri doğrulama
+
 const validateProductionParams = (req, res, next) => {
     const { ice_decline, ev_growth, months } = { ...req.query, ...req.body };
     const errors = [];
@@ -131,7 +128,7 @@ const validateProductionParams = (req, res, next) => {
     next();
 };
 
-// Tedarikçi parametreleri doğrulama
+
 const validateSupplierParams = (req, res, next) => {
     const { quality_score, ppm_rate, price_diff } = { ...req.query, ...req.body };
     const errors = [];
@@ -161,16 +158,16 @@ const validateSupplierParams = (req, res, next) => {
     next();
 };
 
-// Genel parametre sanitizasyonu
+
 const sanitizeParams = (req, res, next) => {
-    // Query params
+
     Object.keys(req.query).forEach(key => {
         if (typeof req.query[key] === 'string') {
             req.query[key] = req.query[key].trim();
         }
     });
 
-    // Body params
+
     if (req.body && typeof req.body === 'object') {
         Object.keys(req.body).forEach(key => {
             if (typeof req.body[key] === 'string') {
