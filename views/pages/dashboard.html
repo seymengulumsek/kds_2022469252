@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS - Ana Panel</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .welcome-section {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-subtitle {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        .status-guncel {
+            background: #28A745;
+            color: #fff;
+        }
+
+        .status-kismen {
+            background: #FFC107;
+            color: #000;
+        }
+
+        .status-eski {
+            background: #DC3545;
+            color: #fff;
+        }
+
+        .page-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .page-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.75rem;
+        }
+
+        .page-card-stat {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0.25rem 0;
+        }
+
+        .page-card-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .badge-insert {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-update {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-delete {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1rem 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .activity-table th,
+        .activity-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .activity-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="/img/mercedes.jpg" alt="Mercedes-Benz" class="sidebar-logo">
+                <h1 class="sidebar-title">Mercedes-Benz</h1>
+                <p class="sidebar-subtitle">Karar Destek Sistemi</p>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <p class="nav-section-title">Genel Bakis</p>
+                    <a href="/" class="nav-item active"><span class="nav-item-icon">&#128202;</span>Ana Panel</a>
+                </div>
+                <div class="nav-section">
+                    <p class="nav-section-title">Stratejik Senaryolar</p>
+                    <a href="/production" class="nav-item"><span class="nav-item-icon">&#127981;</span>1. Uretim</a>
+                    <a href="/supplier" class="nav-item"><span class="nav-item-icon">&#128230;</span>2. Tedarikci</a>
+                    <a href="/welding" class="nav-item"><span class="nav-item-icon">&#9889;</span>3. Kaynak</a>
+                    <a href="/logistics" class="nav-item"><span class="nav-item-icon">&#128667;</span>4. Lojistik</a>
+
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2 class="header-title">Ana Panel</h2>
+                <div class="header-actions">
+                    <span class="header-time" id="headerTime"></span>
+                    <span id="dbStatus" class="db-status">Baglaniyor...</span>
+                </div>
+            </header>
+
+            <div class="page-content">
+
+                <!-- 1. UST KARSILAMA ALANI -->
+                <div class="welcome-section">
+                    <h1 class="welcome-title">Hos Geldiniz</h1>
+                    <p class="welcome-subtitle">
+                        <span id="todayDate"></span> |
+                        Son veri girisi: <strong id="lastDataEntry">--</strong>
+                        <span id="systemStatus" class="status-badge status-guncel">Yukleniyor...</span>
+                    </p>
+                </div>
+
+                <!-- 1.1 STRATEJİK KPI KARTLARI (YENİ) -->
+                <section class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+                    <div class="page-card" style="background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white;">
+                        <h3 class="page-card-title" style="color: white; opacity: 0.9;">En Çok Satan Araç</h3>
+                        <p class="page-card-stat" style="color: white; font-size: 1.2rem; font-weight: bold;"
+                            id="kpi-arac-model">--</p>
+                        <span class="page-card-badge" style="background: rgba(255,255,255,0.2); color: white;"
+                            id="kpi-arac-adet">0 Adet</span>
+                    </div>
+                    <div class="page-card" style="background: linear-gradient(135deg, #FFC107, #FF9800); color: white;">
+                        <h3 class="page-card-title" style="color: white; opacity: 0.9;">Tedarikçi Durumu</h3>
+                        <p class="page-card-stat" style="color: white; font-size: 1.2rem; font-weight: bold;"
+                            id="kpi-tedarikci-sayi">0</p>
+                        <span class="page-card-badge"
+                            style="background: rgba(255,255,255,0.2); color: white;">Değerlendirilmeli</span>
+                    </div>
+                    <div class="page-card" style="background: linear-gradient(135deg, #DC3545, #c0392b); color: white;">
+                        <h3 class="page-card-title" style="color: white; opacity: 0.9;">Robot Bakım/Yatırım</h3>
+                        <p class="page-card-stat" style="color: white; font-size: 1.2rem; font-weight: bold;"
+                            id="kpi-robot-sayi">0</p>
+                        <span class="page-card-badge" style="background: rgba(255,255,255,0.2); color: white;">Aksiyon
+                            Gerekli</span>
+                    </div>
+                    <div class="page-card" style="background: linear-gradient(135deg, #17A2B8, #2c3e50); color: white;">
+                        <h3 class="page-card-title" style="color: white; opacity: 0.9;">Lojistik AGV Geçiş</h3>
+                        <p class="page-card-stat" style="color: white; font-size: 0.9rem; margin-top: 5px;"
+                            id="kpi-agv-oneri">Analiz Ediliyor...</p>
+                    </div>
+                </section>
+
+                <!-- 2. SAYFA BAZLI GUNCELLIK KARTLARI -->
+                <section class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="page-card" id="card-uretim">
+                        <h3 class="page-card-title">Uretim</h3>
+                        <p class="page-card-stat">Son: <span id="uretim-son">--</span></p>
+                        <p class="page-card-stat">7 Gun: <span id="uretim-hafta">0</span> islem</p>
+                        <span class="page-card-badge" id="uretim-tip">-</span>
+                    </div>
+                    <div class="page-card" id="card-kaynak">
+                        <h3 class="page-card-title">Kaynak</h3>
+                        <p class="page-card-stat">Son: <span id="kaynak-son">--</span></p>
+                        <p class="page-card-stat">7 Gun: <span id="kaynak-hafta">0</span> islem</p>
+                        <span class="page-card-badge" id="kaynak-tip">-</span>
+                    </div>
+                    <div class="page-card" id="card-tedarik">
+                        <h3 class="page-card-title">Tedarik</h3>
+                        <p class="page-card-stat">Son: <span id="tedarik-son">--</span></p>
+                        <p class="page-card-stat">7 Gun: <span id="tedarik-hafta">0</span> islem</p>
+                        <span class="page-card-badge" id="tedarik-tip">-</span>
+                    </div>
+                    <div class="page-card" id="card-lojistik">
+                        <h3 class="page-card-title">Lojistik</h3>
+                        <p class="page-card-stat">Son: <span id="lojistik-son">--</span></p>
+                        <p class="page-card-stat">7 Gun: <span id="lojistik-hafta">0</span> islem</p>
+                        <span class="page-card-badge" id="lojistik-tip">-</span>
+                    </div>
+                </section>
+
+                <!-- 3 & 4. GRAFIKLER (Küçültüldü: chart-grid-3 kullanılarak 3 sütunluk yapıda sıkıştırıldı) -->
+                <section class="chart-grid-3">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Sistem Aktivitesi (Son 7 Gun)</h3>
+                        </div>
+                        <div class="chart-container" style="height: 250px;"><canvas id="aktiviteChart"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Sayfa Bazli Dagilim</h3>
+                        </div>
+                        <div class="chart-container" style="height: 250px;"><canvas id="dagilimChart"></canvas></div>
+                    </div>
+                </section>
+
+                <!-- 5. SON ISLEMLER TABLOSU -->
+                <div class="chart-card" style="margin-top: 1rem;">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Son Islemler</h3>
+                    </div>
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Tablo</th>
+                                <th>Islem</th>
+                                <th>Kullanici</th>
+                                <th>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sonIslemlerBody">
+                            <tr>
+                                <td colspan="4" style="text-align:center;">Yukleniyor...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 6. KURUMSAL BILGI ALANI -->
+                <div class="info-box">
+                    Bu ana panel, sistemin veri guncelligini ve kullanim durumunu izlemek amaciyla tasarlanmistir.
+                    Trigger sistemi ile otomatik veri takibi yapilmaktadir.
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        let charts = {};
+
+        document.addEventListener('DOMContentLoaded', function () {
+            KDS.init('dashboard');
+            setTodayDate();
+            loadAllData();
+        });
+
+        function setTodayDate() {
+            var today = new Date();
+            var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('todayDate').textContent = today.toLocaleDateString('tr-TR', options);
+        }
+
+        async function loadAllData() {
+            await Promise.all([
+                loadSistemDurumu(),
+                loadExecutiveKPIs(),
+                loadSayfaGuncellik(),
+                loadAktiviteTrend(),
+                loadSayfaDagilim(),
+                loadSonIslemler()
+            ]);
+            document.getElementById('dbStatus').textContent = 'MySQL Bagli';
+        }
+
+        async function loadSistemDurumu() {
+            try {
+                var res = await fetch('/api/audit/sistem-durumu');
+                var result = await res.json();
+                if (result.success && result.data) {
+                    var d = result.data;
+
+                    if (d.son_veri_girisi) {
+                        var tarih = new Date(d.son_veri_girisi);
+                        document.getElementById('lastDataEntry').textContent = tarih.toLocaleString('tr-TR');
+                    } else {
+                        document.getElementById('lastDataEntry').textContent = 'Veri yok';
+                    }
+
+                    var statusEl = document.getElementById('systemStatus');
+                    statusEl.textContent = d.sistem_durumu;
+                    statusEl.className = 'status-badge';
+                    if (d.sistem_durumu === 'Guncel') {
+                        statusEl.classList.add('status-guncel');
+                    } else if (d.sistem_durumu === 'Kismen Guncel') {
+                        statusEl.classList.add('status-kismen');
+                    } else {
+                        statusEl.classList.add('status-eski');
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadSayfaGuncellik() {
+            try {
+                var res = await fetch('/api/audit/sayfa-guncellik');
+                var result = await res.json();
+                if (result.success && result.data) {
+                    result.data.forEach(function (item) {
+                        var key = item.sayfa.toLowerCase();
+                        var sonEl = document.getElementById(key + '-son');
+                        var haftaEl = document.getElementById(key + '-hafta');
+                        var tipEl = document.getElementById(key + '-tip');
+
+                        if (sonEl) {
+                            sonEl.textContent = item.son_islem_tarihi
+                                ? new Date(item.son_islem_tarihi).toLocaleDateString('tr-TR')
+                                : '-';
+                        }
+                        if (haftaEl) haftaEl.textContent = item.haftalik_islem;
+                        if (tipEl) {
+                            tipEl.textContent = item.son_islem_tipi;
+                            tipEl.className = 'page-card-badge';
+                            if (item.son_islem_tipi === 'INSERT') tipEl.classList.add('badge-insert');
+                            else if (item.son_islem_tipi === 'UPDATE') tipEl.classList.add('badge-update');
+                            else if (item.son_islem_tipi === 'DELETE') tipEl.classList.add('badge-delete');
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadAktiviteTrend() {
+            try {
+                var res = await fetch('/api/audit/aktivite-trend');
+                var result = await res.json();
+                if (result.success && result.data) {
+                    var labels = result.data.map(function (r) {
+                        return new Date(r.tarih).toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric' });
+                    });
+                    var values = result.data.map(function (r) { return r.islem_sayisi; });
+
+                    var ctx = document.getElementById('aktiviteChart').getContext('2d');
+                    if (charts.aktivite) charts.aktivite.destroy();
+
+                    charts.aktivite = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Islem Sayisi',
+                                data: values,
+                                borderColor: '#007bff',
+                                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadSayfaDagilim() {
+            try {
+                var res = await fetch('/api/audit/sayfa-dagilim');
+                var result = await res.json();
+                if (result.success && result.data) {
+                    var labels = result.data.map(function (r) { return r.kategori; });
+                    var values = result.data.map(function (r) { return r.toplam; });
+
+                    var ctx = document.getElementById('dagilimChart').getContext('2d');
+                    if (charts.dagilim) charts.dagilim.destroy();
+
+                    charts.dagilim = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: values,
+                                backgroundColor: ['#DC3545', '#FFC107', '#28A745', '#17A2B8', '#6C757D']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'right' } }
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+
+
+        async function loadExecutiveKPIs() {
+            try {
+                const res = await fetch('/api/dashboard/overview');
+                const result = await res.json();
+                if (result.success && result.data) {
+                    const d = result.data;
+
+                    // 1. En Çok Satan
+                    if (d.enCokSatan) {
+                        document.getElementById('kpi-arac-model').textContent = d.enCokSatan.model;
+                        document.getElementById('kpi-arac-adet').textContent = d.enCokSatan.adet.toLocaleString('tr-TR') + ' Adet';
+                    }
+
+                    // 2. Riskli Tedarikçi
+                    if (d.riskliTedarikci) {
+                        document.getElementById('kpi-tedarikci-sayi').textContent = d.riskliTedarikci.metin;
+                        document.getElementById('kpi-tedarikci-sayi').style.fontSize = '0.9rem';
+                    }
+
+                    // 3. Sorunlu Robot
+                    if (d.robotKPI) {
+                        document.getElementById('kpi-robot-sayi').textContent = d.robotKPI.metin;
+                        document.getElementById('kpi-robot-sayi').style.fontSize = '0.9rem';
+                    }
+
+                    // 4. AGV Önerisi
+                    document.getElementById('kpi-agv-oneri').textContent = d.agvOnerisi || '-';
+                    document.getElementById('kpi-agv-oneri').style.fontWeight = 'bold';
+                }
+            } catch (e) { console.error('KPI Hatası:', e); }
+        }
+
+        async function loadSonIslemler() {
+            try {
+                var res = await fetch('/api/audit/son-islemler');
+                var result = await res.json();
+                var tbody = document.getElementById('sonIslemlerBody');
+
+                if (result.success && result.data && result.data.length > 0) {
+                    var html = '';
+                    result.data.forEach(function (r) {
+                        var badgeClass = r.islem_tipi === 'INSERT' ? 'badge-insert' : (r.islem_tipi === 'UPDATE' ? 'badge-update' : 'badge-delete');
+                        var userInfo = (r.kullanici_adi || 'Sistem') + ' <small style="color:#888">(' + (r.kullanici_yetkisi || '-') + ')</small>';
+
+                        html += '<tr>';
+                        html += '<td>' + r.tablo_adi + '</td>';
+                        html += '<td><span class="page-card-badge ' + badgeClass + '">' + r.islem_tipi + '</span></td>';
+                        html += '<td>' + userInfo + '</td>';
+                        html += '<td>' + new Date(r.islem_tarihi).toLocaleString('tr-TR') + '</td>';
+                        html += '</tr>';
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">Henuz islem kaydedilmedi. Triggerlar aktif oldugunda veriler burada gorunecek.</td></tr>';
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('sonIslemlerBody').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#DC3545;">Veri yuklenemedi</td></tr>';
+            }
+        }
+    </script>
+</body>
+
+</html>

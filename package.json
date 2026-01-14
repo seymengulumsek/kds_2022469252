@@ -1,0 +1,29 @@
+{
+    "name": "mercedes-benz-kds",
+    "version": "1.0.0",
+    "description": "Mercedes-Benz Karar Destek Sistemi - Decision Support System for ICE/EV Production",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js"
+    },
+    "keywords": [
+        "decision-support",
+        "mercedes-benz",
+        "production",
+        "analytics",
+        "dashboard"
+    ],
+    "author": "Mercedes-Benz Production Team",
+    "license": "PROPRIETARY",
+    "dependencies": {
+        "express": "^4.18.2",
+        "mysql2": "^3.6.5",
+        "dotenv": "^16.3.1",
+        "cors": "^2.8.5",
+        "body-parser": "^1.20.2"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    }
+}

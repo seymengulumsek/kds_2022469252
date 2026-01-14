@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS - Kaynak Kalitesi</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="/img/mercedes.jpg" alt="Mercedes-Benz" class="sidebar-logo">
+                <h1 class="sidebar-title">Mercedes-Benz</h1>
+                <p class="sidebar-subtitle">Karar Destek Sistemi</p>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <p class="nav-section-title">Genel Bakış</p>
+                    <a href="/" class="nav-item"><span class="nav-item-icon">📊</span>Ana Panel</a>
+                </div>
+                <div class="nav-section">
+                    <p class="nav-section-title">Stratejik Senaryolar</p>
+                    <a href="/production" class="nav-item"><span class="nav-item-icon">🏭</span>1. Üretim</a>
+                    <a href="/supplier" class="nav-item"><span class="nav-item-icon">📦</span>2. Tedarikçi</a>
+                    <a href="/welding" class="nav-item active"><span class="nav-item-icon">⚡</span>3. Kaynak</a>
+                    <a href="/logistics" class="nav-item"><span class="nav-item-icon">🚛</span>4. Lojistik</a>
+
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2 class="header-title">Senaryo 5 - Kaynak Kalitesi</h2>
+                <div class="header-actions">
+                    <span class="header-time" id="headerTime"></span>
+                    <span id="dbStatus" class="db-status">Baglaniyor...</span>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Scrap Orani ve Sapma Analizi</h1>
+                    <p class="page-subtitle">Kaynak kalitesi tahminleri</p>
+                </div>
+
+                <div class="controls">
+                    <h3 class="controls-title">Senaryo Parametreleri</h3>
+                    <div class="control-group">
+                        <div class="control-item">
+                            <label class="control-label">Baslangic Yili</label>
+                            <select class="control-select" id="startYear">
+                                <option value="2016">2016</option>
+                                <option value="2018">2018</option>
+                                <option value="2020" selected>2020</option>
+                                <option value="2022">2022</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label class="control-label">Bitis Yili</label>
+                            <select class="control-select" id="endYear">
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <button class="btn btn-primary" id="btnRefresh">Yenile</button>
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 15px 0 10px 0; font-size: 14px;">Robot Bazli Bakim/Yatirim Secenekleri</h4>
+                    <div class="control-group" id="robotBakimYatirimControls" style="flex-wrap: wrap;">
+                        <p style="color: #666;">Robot listesi yukleniyor...</p>
+                    </div>
+                    <div class="control-group" style="margin-top: 10px;">
+                        <button class="btn btn-primary" id="btnRunSenaryo">Senaryo Hesapla</button>
+                    </div>
+                </div>
+
+                <section class="chart-grid-3">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">1. Robot Bakım Geçmişi Analizi</h3>
+                            <span class="chart-source">robot_bakim (Son 3 Yıl)</span>
+                        </div>
+                        <div class="chart-container"><canvas id="bakimGecmisiChart"></canvas></div>
+                        <div class="chart-summary" id="bakimGecmisiChart-summary"
+                            style="background: #000; color: #fff; padding: 10px;">Son bakım yılları gösterilmektedir.
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">2. Scrap Orani Trendi</h3>
+                            <select id="scrapOranChart-type" style="padding: 2px 4px; font-size: 10px;">
+                                <option value="line" selected>Cizgi</option>
+                                <option value="bar">Cubuk</option>
+                            </select>
+                            <span class="chart-source" id="scrapOranChart-source">...</span>
+                        </div>
+                        <div class="chart-container"><canvas id="scrapOranChart"></canvas></div>
+                        <div class="chart-summary" id="scrapOranChart-summary"></div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">3. Bakim/Yatirim Iyilesme</h3>
+                            <span class="chart-source" id="iyilesmeChart-source">...</span>
+                        </div>
+                        <div class="chart-container"><canvas id="iyilesmeChart"></canvas></div>
+                        <div class="chart-summary" id="iyilesmeChart-summary"></div>
+                    </div>
+                </section>
+
+                <section class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">4. Senaryo: Tahmini Maliyet</h3>
+                            <span class="chart-source" id="maliyetChart-source">...</span>
+                        </div>
+                        <div class="chart-container" style="height: 280px;"><canvas id="maliyetChart"></canvas></div>
+                        <div class="chart-summary" id="maliyetChart-summary"
+                            style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">5. Senaryo: Beklenen Kazanc</h3>
+                            <span class="chart-source" id="kazancChart-source">...</span>
+                        </div>
+                        <div class="chart-container" style="height: 280px;"><canvas id="kazancChart"></canvas></div>
+                        <div class="chart-summary" id="kazancChart-summary"
+                            style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                        </div>
+                    </div>
+                </section>
+
+                <div class="analysis-box" style="background: #000; color: #fff;">
+                    <h4 class="analysis-title" style="color: #fff;">Senaryo Analizi ve Oneriler</h4>
+                    <p class="analysis-text" id="analysis-text" style="color: #fff;">Bakim/Yatirim seceneklerini
+                        belirleyin.</p>
+                    <div class="analysis-recommendation" id="analysis-recommendation"
+                        style="color: #fff; background: rgba(255,255,255,0.1);"></div>
+                </div>
+
+                <div class="debug-panel"
+                    style="margin-top:20px;padding:15px;background:#f8f9fa;border-radius:8px;font-size:12px;">
+                    <h4 style="margin:0 0 10px 0;">Veri Kaynagi Dogrulama</h4>
+                    <div id="debugContent">Parametreleri ayarlayin.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        let historicalData = null, forecastData = null, charts = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            KDS.init('welding');
+            setupEventListeners();
+            loadAllData();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('btnRefresh').addEventListener('click', loadAllData);
+            ['startYear', 'endYear'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', loadAllData);
+            });
+            const btnSenaryo = document.getElementById('btnRunSenaryo');
+            if (btnSenaryo) {
+                btnSenaryo.addEventListener('click', () => {
+                    drawScrapOranChart(getParams());
+                    drawSenaryoMaliyetChart();
+                    drawSenaryoKazancChart();
+                    updateAnalysisRecommendations();
+                });
+            }
+            const scrapOranType = document.getElementById('scrapOranChart-type');
+            if (scrapOranType) {
+                scrapOranType.addEventListener('change', () => drawScrapOranChart(getParams()));
+            }
+        }
+
+        function getParams() {
+            return {
+                startYear: parseInt(document.getElementById('startYear').value),
+                endYear: parseInt(document.getElementById('endYear').value)
+            };
+        }
+
+        function getRobotSecimler() {
+            const secimler = {};
+            document.querySelectorAll('.robot-bakim-select').forEach(select => {
+                secimler[select.dataset.robot] = select.value;
+            });
+            return secimler;
+        }
+
+        async function loadAllData() {
+            const params = getParams();
+            document.getElementById('dbStatus').textContent = 'Yukleniyor...';
+            try {
+                await drawBakimGecmisiChart(); // YENİ FONKSİYON
+                await drawScrapOranChart(params);
+                await loadRobotBakimYatirimListesi();
+                await drawIyilesmeChart(params);
+                await drawSenaryoMaliyetChart();
+                await drawSenaryoKazancChart();
+                // await drawKararMatrisi(params); // KALDIRILDI
+                await updateAnalysisRecommendations();
+                document.getElementById('dbStatus').textContent = 'MySQL Bagli';
+            } catch (e) {
+                console.error('Veri yukleme hatasi:', e);
+                document.getElementById('dbStatus').textContent = 'Hata';
+            }
+        }
+
+        async function drawBakimGecmisiChart() {
+            try {
+                const res = await fetch('/api/kaynak/robot-bakim-gecmisi');
+                const result = await res.json();
+
+                if (!result.success || !result.data) {
+                    document.getElementById('bakimGecmisiChart-summary').textContent = 'Veri Yok';
+                    return;
+                }
+
+                if (charts.bakimGecmisi) charts.bakimGecmisi.destroy();
+
+                const ctx = document.getElementById('bakimGecmisiChart').getContext('2d');
+                charts.bakimGecmisi = new Chart(ctx, {
+                    type: 'line', // Nokta görünümü için line + showLine:false
+                    data: {
+                        labels: result.data.datasets[0].data.map(d => d.x), // X ekseni (yıllar)
+                        datasets: [{
+                            label: 'Bakım Yılı',
+                            data: result.data.datasets[0].data,
+                            backgroundColor: '#FFC107',
+                            borderColor: '#FFC107',
+                            borderWidth: 0,
+                            pointRadius: 8,
+                            pointHoverRadius: 10,
+                            showLine: false // Çizgi çizme, sadece nokta
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Robotları Y ekseninde göster
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        return `Bakım: ${ctx.raw.x}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                min: 2016,
+                                max: 2026,
+                                ticks: { stepSize: 1, precision: 0 },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            y: {
+                                type: 'category',
+                                labels: result.data.labels, // Robot Kodları
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+
+                document.getElementById('bakimGecmisiChart-summary').innerHTML = '<strong>Sarı Noktalar:</strong> Bakım Yapılan Yıllar. <br>Boşluklar bakım yapılmayan dönemleri gösterir.';
+
+            } catch (e) {
+                console.error('Bakım Geçmişi Hata:', e);
+                document.getElementById('bakimGecmisiChart-summary').textContent = 'Grafik yüklenemedi.';
+            }
+        }
+
+        async function loadRobotBakimYatirimListesi() {
+            try {
+                const response = await fetch('/api/kaynak/robot-listesi');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    const container = document.getElementById('robotBakimYatirimControls');
+                    container.innerHTML = result.data.map(robot =>
+                        '<div class="control-item" style="min-width: 150px; margin: 5px; background: #f5f5f5; padding: 8px; border-radius: 6px;">' +
+                        '<label class="control-label" style="display: block; margin-bottom: 5px; font-weight: 600;">' + robot.robot_kodu + '</label>' +
+                        '<select class="control-select robot-bakim-select" data-robot="' + robot.robot_kodu + '" style="width: 100%;">' +
+                        '<option value="yok" selected>Secim Yok</option>' +
+                        '<option value="bakim">Bakim</option>' +
+                        '<option value="yatirim">Yatirim</option>' +
+                        '</select></div>'
+                    ).join('');
+
+                    // Event Listener Ekle
+                    document.querySelectorAll('.robot-bakim-select').forEach(select => {
+                        select.addEventListener('change', () => {
+                            const params = getParams();
+                            drawScrapOranChart(params);
+                            drawSenaryoMaliyetChart();
+                            drawSenaryoKazancChart();
+                            updateAnalysisRecommendations();
+                        });
+                    });
+                }
+            } catch (e) { console.error('Robot listesi hatasi:', e); }
+        }
+
+        async function drawScrapOranChart(params) {
+            try {
+                const url = '/api/kaynak/robot-scrap-trendi?startYear=' + params.startYear + '&endYear=' + params.endYear;
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    document.getElementById('scrapOranChart-summary').textContent = 'Veri bulunamadi.';
+                    return;
+                }
+
+                const { yillar, robotlar, seriler, degisimler } = result.data;
+
+                // --- EKLENDI: İyileşme Oranlarını ve Seçimleri Al ---
+                const responseIyilesme = await fetch('/api/kaynak/bakim-yatirim-analiz');
+                const resultIyilesme = await responseIyilesme.json();
+                const iyilesmeVerileri = resultIyilesme.data?.robotlar || [];
+                const secimler = getRobotSecimler();
+                // ----------------------------------------------------
+
+                const chartType = document.getElementById('scrapOranChart-type').value;
+                const renkler = ['#28A745', '#FFC107', '#DC3545', '#17A2B8', '#6C757D', '#9B59B6'];
+
+                const yillarExt = [...yillar, 2026];
+
+                const datasets = robotlar.map((robot, i) => {
+                    const mevcutVeriler = Object.values(seriler[robot]).map(v => v * 100);
+                    const sonDeger = mevcutVeriler[mevcutVeriler.length - 1] || 0;
+
+                    // --- 2026 TAHMİN MANTIĞI (GÜNCELLENDİ) ---
+                    let tahmin2026;
+                    const secim = secimler[robot] || 'yok';
+                    const robotIyilesme = iyilesmeVerileri.find(r => r.robot_kodu === robot);
+
+                    if (secim === 'bakim' && robotIyilesme) {
+                        // Bakım sonrası iyileşme oranını uygula (Düşüş iyidir)
+                        tahmin2026 = sonDeger * (1 - (robotIyilesme.bakim_iyilesme_orani / 100));
+                    } else if (secim === 'yatirim' && robotIyilesme) {
+                        // Yatırım sonrası iyileşme oranını uygula
+                        tahmin2026 = sonDeger * (1 - (robotIyilesme.yatirim_iyilesme_orani / 100));
+                    } else {
+                        // Varsayılan: Mevcut trende göre devam et
+                        // degisimler[robot] zaten yüzde olarak geliyor, bu yüzden 1 + (degisim / 100)
+                        tahmin2026 = sonDeger * (1 + (degisimler[robot] / 100));
+                    }
+                    tahmin2026 = Math.max(0, tahmin2026); // Negatif değerleri engelle
+                    // ------------------------------------------
+
+                    const veriler = [...mevcutVeriler];
+                    // 2026 verisini ekle
+                    veriler.push(Math.round(tahmin2026 * 100) / 100);
+
+                    return {
+                        label: robot,
+                        data: veriler,
+                        borderColor: renkler[i % renkler.length],
+                        backgroundColor: chartType === 'line' ? 'transparent' : renkler[i % renkler.length] + '99',
+                        tension: 0.4,
+                        fill: false,
+                        // Seçime göre stil
+                        borderDash: secim !== 'yok' ? [5, 5] : undefined
+                    };
+                });
+
+                document.getElementById('scrapOranChart-source').textContent = 'kaynak_kalitesi + senaryo_tahmini';
+                if (charts.scrapOran) charts.scrapOran.destroy();
+
+                const ctx = document.getElementById('scrapOranChart').getContext('2d');
+                charts.scrapOran = new Chart(ctx, {
+                    type: chartType,
+                    data: { labels: yillarExt, datasets },
+                    options: {
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => {
+                                        const yil = yillarExt[ctx.dataIndex];
+                                        const tahminMi = yil === 2026;
+                                        const dataset = datasets[ctx.datasetIndex];
+                                        const secim = secimler[dataset.label];
+                                        let extra = '';
+                                        if (tahminMi) {
+                                            if (secim === 'bakim') extra = ' (Bakım Etkisi)';
+                                            else if (secim === 'yatirim') extra = ' (Yatırım Etkisi)';
+                                            else extra = ' (Trend Tahmini)';
+                                        }
+                                        return ctx.dataset.label + ': ' + ctx.raw.toFixed(1) + ' ppm' + extra;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Scrap Orani (ppm)' },
+                                ticks: { callback: (v) => v.toFixed(1) + ' ppm' }
+                            }
+                        }
+                    }
+                });
+
+                const ozetHtml = robotlar.map(robot => {
+                    const secim = secimler[robot] || 'yok';
+                    const degisim = degisimler[robot];
+
+                    // Eğer seçim varsa, iyileşme miktarını göster
+                    let ekBilgi = '';
+                    if (secim !== 'yok') {
+                        ekBilgi = ` <strong style="color:#28A745">(${secim.toUpperCase()})</strong>`;
+                    }
+
+                    const renk = degisim > 0 ? '#DC3545' : degisim < 0 ? '#28A745' : '#FFC107';
+                    return '<span style="color:' + renk + '">' + robot + ': ' + (degisim > 0 ? '+' : '') + degisim.toFixed(1) + '%' + ekBilgi + '</span>';
+                }).join(' | ');
+                document.getElementById('scrapOranChart-summary').innerHTML = 'Ort. yillik degisim: ' + ozetHtml + ' | <strong>2026: Dinamik Senaryo</strong>';
+
+            } catch (error) {
+                console.error('Scrap orani hatasi:', error);
+                document.getElementById('scrapOranChart-summary').textContent = 'Hata olustu.';
+            }
+        }
+
+        async function drawIyilesmeChart(params) {
+            try {
+                const response = await fetch('/api/kaynak/bakim-yatirim-analiz');
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    document.getElementById('iyilesmeChart-summary').textContent = 'Veri bulunamadi.';
+                    return;
+                }
+
+                const { robotlar, ozet } = result.data;
+                const bakimIyilesme = robotlar.map(r => r.bakim_iyilesme_orani);
+                const yatirimIyilesme = robotlar.map(r => r.yatirim_iyilesme_orani);
+
+                document.getElementById('iyilesmeChart-source').textContent = 'robot_bakim + kaynak_kalitesi';
+                if (charts.iyilesme) charts.iyilesme.destroy();
+
+                const ctx = document.getElementById('iyilesmeChart').getContext('2d');
+                charts.iyilesme = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: robotlar.map(r => r.robot_kodu),
+                        datasets: [
+                            { label: 'Bakim Sonrasi Iyilesme (%)', data: bakimIyilesme, backgroundColor: '#FFC107', borderRadius: 4 },
+                            { label: 'Yatirim Sonrasi Iyilesme (%)', data: yatirimIyilesme, backgroundColor: '#28A745', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        plugins: { legend: { position: 'top' } },
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Iyilesme Orani (%)' } } }
+                    }
+                });
+
+                document.getElementById('iyilesmeChart-summary').innerHTML =
+                    'Ort. Bakim Iyilesmesi: <strong style="color:#FFC107;">' + ozet.ort_bakim_iyilesme.toFixed(1) + '%</strong> | ' +
+                    'Ort. Yatirim Iyilesmesi: <strong style="color:#28A745;">' + ozet.ort_yatirim_iyilesme.toFixed(1) + '%</strong>';
+
+            } catch (error) {
+                console.error('Iyilesme hatasi:', error);
+            }
+        }
+
+        async function drawSenaryoMaliyetChart() {
+            try {
+                const secimler = getRobotSecimler();
+                const response = await fetch('/api/kaynak/bakim-yatirim-maliyetler');
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    document.getElementById('maliyetChart-summary').textContent = 'Veri bulunamadi.';
+                    return;
+                }
+
+                const robotlar = result.data;
+                const senaryoMaliyetler = robotlar.map(robot => {
+                    const secim = secimler[robot.robot_kodu] || 'yok';
+                    if (secim === 'bakim') return robot.bakim_maliyet;
+                    if (secim === 'yatirim') return robot.yatirim_maliyet;
+                    return 0;
+                });
+
+                document.getElementById('maliyetChart-source').textContent = 'robot_bakim';
+                if (charts.maliyet) charts.maliyet.destroy();
+
+                const ctx = document.getElementById('maliyetChart').getContext('2d');
+                charts.maliyet = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: robotlar.map(r => r.robot_kodu),
+                        datasets: [{
+                            label: 'Bakim/Yatirim Maliyeti (EUR)',
+                            data: senaryoMaliyetler,
+                            backgroundColor: senaryoMaliyetler.map((v, i) => {
+                                const secim = secimler[robotlar[i].robot_kodu] || 'yok';
+                                return secim === 'bakim' ? '#FFC107' : secim === 'yatirim' ? '#17A2B8' : '#6c757d';
+                            }),
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: (ctx) => 'Maliyet: ' + ctx.raw.toLocaleString('tr-TR') + ' EUR' } }
+                        },
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Maliyet (EUR)' } } }
+                    }
+                });
+
+                const toplamMaliyet = senaryoMaliyetler.reduce((a, b) => a + b, 0);
+                document.getElementById('maliyetChart-summary').innerHTML =
+                    'Secilen senaryo icin toplam maliyet: <strong>' + toplamMaliyet.toLocaleString('tr-TR') + ' EUR</strong>';
+
+            } catch (error) {
+                console.error('Maliyet hatasi:', error);
+            }
+        }
+
+        async function drawSenaryoKazancChart() {
+            try {
+                const secimler = getRobotSecimler();
+                const response = await fetch('/api/kaynak/bakim-yatirim-maliyetler');
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    document.getElementById('kazancChart-summary').textContent = 'Veri bulunamadi.';
+                    return;
+                }
+
+                const robotlar = result.data;
+                const senaryoKazanclar = robotlar.map(robot => {
+                    const secim = secimler[robot.robot_kodu] || 'yok';
+                    if (secim === 'bakim') return robot.bakim_kazanc_3yil;
+                    if (secim === 'yatirim') return robot.yatirim_kazanc_3yil;
+                    return 0;
+                });
+
+                document.getElementById('kazancChart-source').textContent = 'kaynak_kalitesi';
+                if (charts.kazanc) charts.kazanc.destroy();
+
+                const ctx = document.getElementById('kazancChart').getContext('2d');
+                charts.kazanc = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: robotlar.map(r => r.robot_kodu),
+                        datasets: [{
+                            label: '3 Yillik Beklenen Kazanc (EUR)',
+                            data: senaryoKazanclar,
+                            backgroundColor: senaryoKazanclar.map((v, i) => {
+                                const secim = secimler[robotlar[i].robot_kodu] || 'yok';
+                                return secim === 'bakim' ? '#FFC107' : secim === 'yatirim' ? '#28A745' : '#6c757d';
+                            }),
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: (ctx) => 'Kazanc: ' + ctx.raw.toLocaleString('tr-TR') + ' EUR' } }
+                        },
+                        scales: { y: { beginAtZero: true, title: { display: true, text: '3 Yillik Kazanc (EUR)' } } }
+                    }
+                });
+
+                const toplamKazanc = senaryoKazanclar.reduce((a, b) => a + b, 0);
+                document.getElementById('kazancChart-summary').innerHTML =
+                    'Secilen senaryo ile 3 yilda beklenen kazanc: <strong style="color:#28A745">' + toplamKazanc.toLocaleString('tr-TR') + ' EUR</strong>';
+
+            } catch (error) {
+                console.error('Kazanc hatasi:', error);
+            }
+        }
+
+        async function updateAnalysisRecommendations() {
+            try {
+                const secimler = getRobotSecimler();
+                const response = await fetch('/api/kaynak/bakim-yatirim-maliyetler');
+                const result = await response.json();
+
+                if (!result.success || !result.data) return;
+
+                const robotlar = result.data;
+                let toplamMaliyet = 0, toplamKazanc = 0;
+                let oneriler = [];
+
+                robotlar.forEach(robot => {
+                    const secim = secimler[robot.robot_kodu] || 'yok';
+                    if (secim === 'bakim') {
+                        toplamMaliyet += robot.bakim_maliyet;
+                        toplamKazanc += robot.bakim_kazanc_3yil;
+                        oneriler.push({ robot: robot.robot_kodu, secim: 'Bakim', maliyet: robot.bakim_maliyet, kazanc: robot.bakim_kazanc_3yil });
+                    } else if (secim === 'yatirim') {
+                        toplamMaliyet += robot.yatirim_maliyet;
+                        toplamKazanc += robot.yatirim_kazanc_3yil;
+                        oneriler.push({ robot: robot.robot_kodu, secim: 'Yatirim', maliyet: robot.yatirim_maliyet, kazanc: robot.yatirim_kazanc_3yil });
+                    }
+                });
+
+                const roi = toplamMaliyet > 0 ? ((toplamKazanc - toplamMaliyet) / toplamMaliyet) * 100 : 0;
+                let genelDurum = '';
+                if (roi > 100) {
+                    genelDurum = '<strong>Cok Olumlu Senaryo:</strong> %' + roi.toFixed(0) + ' ROI ile ' + toplamKazanc.toLocaleString('tr-TR') + ' EUR kazanc saglanabilir.';
+                } else if (roi > 0) {
+                    genelDurum = '<strong>Olumlu Senaryo:</strong> %' + roi.toFixed(0) + ' ROI ile ' + toplamKazanc.toLocaleString('tr-TR') + ' EUR kazanc saglanabilir.';
+                } else {
+                    genelDurum = '<strong>Dikkatli Degerlendirilmeli:</strong> Senaryo mali olarak dusuk getiri sagliyor.';
+                }
+
+                document.getElementById('analysis-text').innerHTML = genelDurum;
+
+                let onerilerHtml = '';
+                oneriler.forEach(oneri => {
+                    const netKar = oneri.kazanc - oneri.maliyet;
+                    const roiOneri = oneri.maliyet > 0 ? ((netKar / oneri.maliyet) * 100).toFixed(0) : 0;
+                    onerilerHtml += '<div style="background:#333; color:#fff; padding:10px; margin:5px 0; border-radius:6px;">' +
+                        '<strong>' + oneri.robot + ':</strong> ' + oneri.secim + '<br>' +
+                        'Maliyet: ' + oneri.maliyet.toLocaleString('tr-TR') + ' EUR<br>' +
+                        'ROI: %' + roiOneri + '<br>' +
+                        '3 Yillik Kazanc: ' + oneri.kazanc.toLocaleString('tr-TR') + ' EUR<br>' +
+                        '</div>';
+                });
+
+                if (oneriler.length > 0) {
+                    onerilerHtml += '<div style="background:#1a1a2e; color:#fff; padding:15px; margin-top:10px; border-radius:8px;">' +
+                        '<strong>GENEL OZET:</strong><br>' +
+                        'Toplam Maliyet: ' + toplamMaliyet.toLocaleString('tr-TR') + ' EUR<br>' +
+                        '3 Yillik Toplam Kazanc: ' + toplamKazanc.toLocaleString('tr-TR') + ' EUR<br>' +
+                        'Net Kar: ' + (toplamKazanc - toplamMaliyet).toLocaleString('tr-TR') + ' EUR<br>' +
+                        'ROI: %' + roi.toFixed(0) +
+                        '</div>';
+                }
+
+                document.getElementById('analysis-recommendation').innerHTML = onerilerHtml || '<p style="color:#999;">Oneri icin bakim/yatirim seceneklerini belirleyin.</p>';
+
+            } catch (error) {
+                console.error('Analiz hatasi:', error);
+            }
+        }
+
+        let kararMatrisiChartInstance = null;
+        async function drawKararMatrisi(params) {
+            try {
+                const response = await fetch('/api/kaynak/yatirim-matrisi?startYear=' + params.startYear + '&endYear=' + params.endYear);
+                const result = await response.json();
+                if (!result.success || !result.data?.robotlar) return;
+
+                const robotlar = result.data.robotlar;
+                const esikler = result.data.esikler;
+                const ozet = result.data.ozet;
+
+                document.getElementById('ozet-stabil').textContent = ozet.stabil;
+                document.getElementById('ozet-bakim').textContent = ozet.bakim;
+                document.getElementById('ozet-takip').textContent = ozet.takip;
+                document.getElementById('ozet-yatirim').textContent = ozet.yatirim;
+
+                const scatterData = robotlar.map(r => ({
+                    x: r.scrap_artis_orani,
+                    y: r.toplam_maliyet / 1000,
+                    robot_kodu: r.robot_kodu,
+                    bolge: r.bolge,
+                    oneri: r.oneri,
+                    renk: r.renk,
+                    scrap_maliyet: r.scrap_maliyet,
+                    servis_maliyet: r.servis_maliyet
+                }));
+
+                const ctx = document.getElementById('kararMatrisiChart').getContext('2d');
+                if (kararMatrisiChartInstance) kararMatrisiChartInstance.destroy();
+
+                kararMatrisiChartInstance = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Robotlar',
+                            data: scatterData,
+                            backgroundColor: scatterData.map(d => d.renk),
+                            pointRadius: 10,
+                            pointHoverRadius: 14
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const d = context.raw;
+                                        return [
+                                            'Robot: ' + d.robot_kodu,
+                                            'Scrap Artis: %' + d.x,
+                                            'Toplam Maliyet: ' + d.y.toFixed(0) + 'K EUR',
+                                            'Bolge: ' + d.bolge,
+                                            'Oneri: ' + d.oneri
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Scrap Artis Orani (%)' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                            y: { title: { display: true, text: 'Toplam Maliyet (K EUR)' }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                        },
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const idx = elements[0].index;
+                                const robot = scatterData[idx];
+                                document.getElementById('kararMatrisiChart-summary').innerHTML =
+                                    '<strong>' + robot.robot_kodu + ':</strong> ' + robot.oneri + ' | Scrap: ' + (robot.scrap_maliyet / 1000) + 'K EUR, Servis: ' + (robot.servis_maliyet / 1000) + 'K EUR';
+                            }
+                        }
+                    }
+                });
+
+                document.getElementById('kararMatrisiChart-source').textContent = 'kaynak_kalitesi, robot_bakim';
+
+            } catch (error) {
+                console.error('Karar matrisi hatasi:', error);
+            }
+        }
+
+        function updateSource(id, response) {
+            if (response?.tables) {
+                document.getElementById(id).textContent = response.tables.join(', ');
+            }
+        }
+    </script>
+</body>
+
+</html>

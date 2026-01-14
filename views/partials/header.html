@@ -1,0 +1,22 @@
+<!-- Header Partial -->
+<header class="header">
+    <h2 class="header-title" id="pageTitle">Karar Destek Sistemi</h2>
+    <div class="header-actions">
+        <span class="header-time" id="headerTime"></span>
+        <span class="header-status">🟢 Sistem Aktif</span>
+    </div>
+</header>
+
+<script>
+    // Update time
+    function updateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleString('tr-TR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        document.getElementById('headerTime').textContent = timeStr;
+    }
+    updateTime();
+    setInterval(updateTime, 60000);
+</script>

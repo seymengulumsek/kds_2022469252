@@ -1,0 +1,644 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS — Tedarikçi Kalitesi</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="/img/mercedes.jpg" alt="Mercedes-Benz" class="sidebar-logo">
+                <h1 class="sidebar-title">Mercedes-Benz</h1>
+                <p class="sidebar-subtitle">Karar Destek Sistemi</p>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <p class="nav-section-title">Genel Bakış</p>
+                    <a href="/" class="nav-item"><span class="nav-item-icon">📊</span>Kurumsal Panel</a>
+                </div>
+                <div class="nav-section">
+                    <p class="nav-section-title">Stratejik Senaryolar</p>
+                    <a href="/production" class="nav-item"><span class="nav-item-icon">🏭</span>1. Üretim</a>
+                    <a href="/supplier" class="nav-item active"><span class="nav-item-icon">📦</span>2. Tedarikçi</a>
+                    <a href="/welding" class="nav-item"><span class="nav-item-icon">⚡</span>3. Kaynak</a>
+                    <a href="/logistics" class="nav-item"><span class="nav-item-icon">🚛</span>4. Lojistik</a>
+
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2 class="header-title">Senaryo 2 — Tedarikçi Kalite Yönetimi</h2>
+                <div class="header-actions">
+                    <span class="header-time" id="headerTime"></span>
+                    <span id="dbStatus" class="db-status">🔄 Bağlanıyor...</span>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Tedarikçi Kalite Analizi</h1>
+                    <p class="page-subtitle">Tek tedarikçi bazlı detaylı kalite, PPM, servis ve teslimat analizi</p>
+                </div>
+
+                <!-- PARAMETRE PANELİ -->
+                <div class="controls">
+                    <h3 class="controls-title">📊 Tedarikçi Seçimi</h3>
+                    <div class="control-group">
+                        <div class="control-item" style="flex: 2;">
+                            <label class="control-label">Tedarikçi Seçin (Zorunlu)</label>
+                            <select class="control-select" id="tedarikciSelect" style="font-size: 16px; padding: 10px;">
+                                <option value="">-- Tedarikçi Seçin --</option>
+                            </select>
+                        </div>
+                        <div class="control-item" style="display: none;">
+                            <label class="control-label">Başlangıç Yılı</label>
+                            <select class="control-select" id="startYear">
+                                <option value="2016">2016</option>
+                                <option value="2021" selected>2021</option>
+                            </select>
+                        </div>
+                        <div class="control-item" style="display: none;">
+                            <label class="control-label">Bitiş Yılı</label>
+                            <select class="control-select" id="endYear">
+                                <option value="2025" selected>2025</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOŞ DURUM MESAJI -->
+                <div id="emptyState" class="empty-state"
+                    style="display: block; text-align: center; padding: 50px; background: #f8f9fa; border-radius: 12px; margin: 20px 0;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📦</div>
+                    <h3 style="color: #333; margin-bottom: 10px;">Tedarikçi Seçin</h3>
+                    <p style="color: #666;">Yukarıdaki dropdown'dan bir tedarikçi seçerek analizi başlatın.</p>
+                </div>
+
+                <!-- İÇERİK (Tedarikçi seçildiğinde görünür) -->
+                <div id="mainContent" style="display: none;">
+                    <!-- KPI KARTLARI ... -->
+                    <section class="kpi-grid">
+                        <div class="kpi-card success">
+                            <p class="kpi-label">Ort. Kalite (Son Yıl)</p>
+                            <p class="kpi-value" id="kpi-quality">--<span class="kpi-unit">%</span></p>
+                        </div>
+                        <div class="kpi-card warning">
+                            <p class="kpi-label">Ort. PPM (Son Yıl)</p>
+                            <p class="kpi-value" id="kpi-ppm">--<span class="kpi-unit">ppm</span></p>
+                        </div>
+                        <div class="kpi-card info">
+                            <p class="kpi-label">Ort. Teslimat Süresi</p>
+                            <p class="kpi-value" id="kpi-teslimat">--<span class="kpi-unit">hafta</span></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">Ort. Gecikme</p>
+                            <p class="kpi-value" id="kpi-gecikme">--<span class="kpi-unit">hafta</span></p>
+                        </div>
+                    </section>
+
+                    <!-- GRAFİKLER -->
+                    <section class="chart-grid">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">1. Kalite Skoru Trendi</h3>
+                                <select id="qualityChart-type" class="chart-type-select"
+                                    style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                    <option value="line" selected>Çizgi</option>
+                                    <option value="bar">Çubuk</option>
+                                    <option value="radar">Radar</option>
+                                </select>
+                                <span class="chart-source" id="qualityChart-source">⏳</span>
+                            </div>
+                            <div class="chart-container"><canvas id="qualityChart"></canvas></div>
+                            <div class="chart-summary" id="qualityChart-summary"
+                                style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">2. PPM Oranı Trendi</h3>
+                                <select id="ppmChart-type" class="chart-type-select"
+                                    style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                    <option value="line" selected>Çizgi</option>
+                                    <option value="bar">Çubuk</option>
+                                    <option value="radar">Radar</option>
+                                </select>
+                                <span class="chart-source" id="ppmChart-source">⏳</span>
+                            </div>
+                            <div class="chart-container"><canvas id="ppmChart"></canvas></div>
+                            <div class="chart-summary" id="ppmChart-summary"
+                                style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="chart-grid">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">3. Servis/Garanti Analizi</h3>
+                                <select id="servisChart-type" class="chart-type-select"
+                                    style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                    <option value="bar" selected>Çubuk</option>
+                                    <option value="line">Çizgi</option>
+                                    <option value="doughnut">Halka</option>
+                                </select>
+                                <span class="chart-source" id="servisChart-source">⏳</span>
+                            </div>
+                            <div class="chart-container"><canvas id="servisChart"></canvas></div>
+                            <div class="chart-summary" id="servisChart-summary"
+                                style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">4. Teslimat Gecikmeleri</h3>
+                                <select id="teslimatChart-type" class="chart-type-select"
+                                    style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                    <option value="bar" selected>Çubuk</option>
+                                    <option value="line">Çizgi</option>
+                                    <option value="radar">Radar</option>
+                                </select>
+                                <span class="chart-source" id="teslimatChart-source">⏳</span>
+                            </div>
+                            <div class="chart-container"><canvas id="teslimatChart"></canvas></div>
+                            <div class="chart-summary" id="teslimatChart-summary"
+                                style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ANALİZ KUTUSU -->
+                    <div class="analysis-box" style="background: #1a1a2e; color: #fff; border-radius: 12px;">
+                        <div class="analysis-header"
+                            style="background: #16213e; padding: 12px 16px; border-radius: 12px 12px 0 0;">
+                            <span class="analysis-icon">🔍</span>
+                            <h3 style="color: #fff; margin: 0;">Tedarikçi Analiz Özeti</h3>
+                        </div>
+                        <div class="analysis-content" style="padding: 16px; color: #e0e0e0;">
+                            <p id="analysis-text">Tedarikçi seçildiğinde analiz gösterilecek.</p>
+                            <div id="analysis-recommendation" style="margin-top: 10px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/kds-core.js"></script>
+    <script>
+        // Chart instances
+        const charts = {
+            quality: null,
+            ppm: null,
+            servis: null,
+            teslimat: null
+        };
+
+        // Sayfa yüklendiğinde
+        window.onload = function () {
+            console.log('Sayfa yüklendi, tedarikçi listesi alınıyor...');
+            if (typeof KDS !== 'undefined') {
+                KDS.startClock('headerTime');
+            }
+            loadTedarikciListesi();
+            setupEventListeners();
+        };
+
+        // Event listener'lar
+        function setupEventListeners() {
+            document.getElementById('tedarikciSelect').addEventListener('change', onTedarikciChange);
+            document.getElementById('startYear').addEventListener('change', onTedarikciChange);
+            document.getElementById('endYear').addEventListener('change', onTedarikciChange);
+
+            // Grafik türü seçicileri
+            document.getElementById('qualityChart-type').addEventListener('change', onTedarikciChange);
+            document.getElementById('ppmChart-type').addEventListener('change', onTedarikciChange);
+            document.getElementById('servisChart-type').addEventListener('change', onTedarikciChange);
+            document.getElementById('teslimatChart-type').addEventListener('change', onTedarikciChange);
+        }
+
+        // Tedarikçi listesini yükle
+        function loadTedarikciListesi() {
+            fetch('/api/tedarikci/liste')
+                .then(response => response.json())
+                .then(result => {
+                    console.log('API yanıtı:', result);
+
+                    if (result.success && result.data && result.data.length > 0) {
+                        const select = document.getElementById('tedarikciSelect');
+                        console.log('Tedarikçi sayısı:', result.data.length);
+
+                        result.data.forEach(t => {
+                            const option = document.createElement('option');
+                            option.value = t.tedarikci_id;
+                            option.textContent = `${t.tedarikci_kodu} - ${t.tedarikci_adi}`;
+                            select.appendChild(option);
+                        });
+
+                        document.getElementById('dbStatus').textContent = '🟢 MySQL Bağlı';
+                        document.getElementById('dbStatus').className = 'db-status connected';
+                    } else {
+                        console.warn('Tedarikçi verisi boş:', result);
+                        document.getElementById('dbStatus').textContent = '⚠️ Veri Yok';
+                    }
+                })
+                .catch(error => {
+                    console.error('Tedarikçi listesi yükleme hatası:', error);
+                    document.getElementById('dbStatus').textContent = '🔴 Bağlantı Hatası';
+                    document.getElementById('dbStatus').className = 'db-status error';
+                });
+        }
+
+        // Tedarikçi değiştiğinde
+        function onTedarikciChange() {
+            const tedarikciId = document.getElementById('tedarikciSelect').value;
+            console.log('Tedarikçi seçildi:', tedarikciId);
+
+            if (!tedarikciId) {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('mainContent').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('dbStatus').textContent = '🔄 Yükleniyor...';
+
+            document.getElementById('dbStatus').textContent = '🔄 Yükleniyor...';
+
+            const startYear = 2021; // Kullanıcı isteği: Sabit 2021
+            const endYear = 2025;   // Sabit 2025
+
+            // Sıralı yükleme
+            loadKaliteTrendi(tedarikciId, startYear, endYear)
+                .then(() => loadPPMTrendi(tedarikciId, startYear, endYear))
+                .then(() => loadServisAnalizi(tedarikciId, startYear, endYear))
+                .then(() => loadTeslimatGecikme(tedarikciId, startYear, endYear))
+                .then(() => loadKPIOzet(tedarikciId, endYear))
+                .then(() => {
+                    updateAnalysis(tedarikciId);
+                    document.getElementById('dbStatus').textContent = '🟢 MySQL Bağlı';
+                    document.getElementById('dbStatus').className = 'db-status connected';
+                })
+                .catch(error => {
+                    console.error('Veri yükleme hatası:', error);
+                    document.getElementById('dbStatus').textContent = '🔴 Hata: ' + error.message;
+                    document.getElementById('dbStatus').className = 'db-status error';
+                });
+        }
+
+        // ===== GRAFİK 1: KALİTE SKORU TRENDİ =====
+        function loadKaliteTrendi(tedarikciId, startYear, endYear) {
+            return fetch(`/api/tedarikci/kalite-trendi/${tedarikciId}?startYear=${startYear}&endYear=${endYear}`)
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Kalite trendi:', result);
+                    document.getElementById('qualityChart-source').textContent = '✅ tedarikci_kalite';
+
+                    if (!result.success || !result.data || result.data.length === 0) {
+                        document.getElementById('qualityChart-summary').textContent = 'Veri bulunamadı.';
+                        return;
+                    }
+
+                    const labels = result.data.map(d => d.yil);
+                    const values = result.data.map(d => parseFloat(d.kalite_skoru));
+                    const chartType = document.getElementById('qualityChart-type').value;
+
+                    if (charts.quality) charts.quality.destroy();
+
+                    const ctx = document.getElementById('qualityChart').getContext('2d');
+                    charts.quality = new Chart(ctx, {
+                        type: chartType,
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: 'Kalite Skoru (%)',
+                                data: values,
+                                borderColor: '#28A745',
+                                backgroundColor: chartType === 'line' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(40, 167, 69, 0.7)',
+                                tension: 0.4,
+                                fill: chartType === 'line'
+                            }]
+                        },
+                        options: {
+                            plugins: { legend: { position: 'top' } },
+                            scales: chartType !== 'radar' ? { y: { min: 70, max: 100 } } : {}
+                        }
+                    });
+
+                    // Alt özet metni
+                    const ozet = result.ozet;
+                    if (ozet && ozet.ortDegisim !== 0) {
+                        const yon = ozet.ortDegisim > 0 ? 'artış' : 'azalış';
+                        const icon = ozet.ortDegisim > 0 ? '📈' : '📉';
+                        document.getElementById('qualityChart-summary').innerHTML =
+                            `${icon} Son ${ozet.yilSayisi - 1} yıl baz alınarak yıllık ortalama <strong>%${Math.abs(ozet.ortDegisim).toFixed(2)}</strong> ${yon} göstermektedir.`;
+                    } else {
+                        document.getElementById('qualityChart-summary').textContent = 'Yeterli veri bulunamadı.';
+                    }
+                });
+        }
+
+        // ===== GRAFİK 2: PPM ORANI TRENDİ =====
+        function loadPPMTrendi(tedarikciId, startYear, endYear) {
+            return fetch(`/api/tedarikci/ppm-trendi/${tedarikciId}?startYear=${startYear}&endYear=${endYear}`)
+                .then(response => response.json())
+                .then(result => {
+                    console.log('PPM trendi:', result);
+                    document.getElementById('ppmChart-source').textContent = '✅ tedarikci_kalite';
+
+                    if (!result.success || !result.data || result.data.length === 0) {
+                        document.getElementById('ppmChart-summary').textContent = 'Veri bulunamadı.';
+                        return;
+                    }
+
+                    const labels = result.data.map(d => d.yil);
+                    const values = result.data.map(d => parseFloat(d.ppm_orani));
+                    const chartType = document.getElementById('ppmChart-type').value;
+
+                    if (charts.ppm) charts.ppm.destroy();
+
+                    const ctx = document.getElementById('ppmChart').getContext('2d');
+                    charts.ppm = new Chart(ctx, {
+                        type: chartType,
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: 'PPM Oranı',
+                                data: values,
+                                borderColor: '#FFC107',
+                                backgroundColor: chartType === 'line' ? 'rgba(255, 193, 7, 0.2)' : 'rgba(255, 193, 7, 0.7)',
+                                tension: 0.4,
+                                fill: chartType === 'line'
+                            }]
+                        },
+                        options: {
+                            plugins: { legend: { position: 'top' } }
+                        }
+                    });
+
+                    // Alt özet metni
+                    const ozet = result.ozet;
+                    if (ozet && ozet.ortDegisim !== 0) {
+                        const yon = ozet.ortDegisim < 0 ? 'iyileşmektedir' : 'kötüleşmektedir';
+                        const icon = ozet.ortDegisim < 0 ? '✅' : '⚠️';
+                        document.getElementById('ppmChart-summary').innerHTML =
+                            `${icon} PPM değeri yıllık ortalama <strong>%${Math.abs(ozet.ortDegisim).toFixed(2)}</strong> oranında ${yon}.`;
+                    } else {
+                        document.getElementById('ppmChart-summary').textContent = 'Yeterli veri bulunamadı.';
+                    }
+                });
+        }
+
+        // ===== GRAFİK 3: SERVİS/GARANTİ ANALİZİ =====
+        function loadServisAnalizi(tedarikciId, startYear, endYear) {
+            return fetch(`/api/tedarikci/servis-analizi/${tedarikciId}?startYear=${startYear}&endYear=${endYear}`)
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Servis analizi:', result);
+                    document.getElementById('servisChart-source').textContent = '✅ servis_kayitlari';
+
+                    if (!result.success || !result.data || result.data.length === 0) {
+                        document.getElementById('servisChart-summary').textContent = 'Veri bulunamadı.';
+                        return;
+                    }
+
+                    // Yıllara göre verileri ayır
+                    const yillar = [...new Set(result.data.map(d => d.yil))].sort();
+                    const garantiIci = yillar.map(yil => {
+                        const row = result.data.find(d => d.yil === yil && d.garanti_durumu === 'GARANTI_ICI');
+                        return row ? parseInt(row.toplam_ariza) : 0;
+                    });
+                    const garantiDisi = yillar.map(yil => {
+                        const row = result.data.find(d => d.yil === yil && d.garanti_durumu === 'GARANTI_DISI');
+                        return row ? parseInt(row.toplam_ariza) : 0;
+                    });
+
+                    const chartType = document.getElementById('servisChart-type').value;
+                    if (charts.servis) charts.servis.destroy();
+
+                    const ctx = document.getElementById('servisChart').getContext('2d');
+
+                    // Doughnut için veri formatı farklı
+                    if (chartType === 'doughnut') {
+                        const toplamGarantiIci = garantiIci.reduce((a, b) => a + b, 0);
+                        const toplamGarantiDisi = garantiDisi.reduce((a, b) => a + b, 0);
+                        charts.servis = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Garanti İçi', 'Garanti Dışı'],
+                                datasets: [{
+                                    data: [toplamGarantiIci, toplamGarantiDisi],
+                                    backgroundColor: ['#28A745', '#DC3545']
+                                }]
+                            },
+                            options: { plugins: { legend: { position: 'top' } } }
+                        });
+                    } else {
+                        charts.servis = new Chart(ctx, {
+                            type: chartType,
+                            data: {
+                                labels: yillar,
+                                datasets: [
+                                    { label: 'Garanti İçi Arıza', data: garantiIci, backgroundColor: '#28A745', borderColor: '#28A745' },
+                                    { label: 'Garanti Dışı Arıza', data: garantiDisi, backgroundColor: '#DC3545', borderColor: '#DC3545' }
+                                ]
+                            },
+                            options: {
+                                plugins: { legend: { position: 'top' } },
+                                scales: chartType === 'bar' ? { x: { stacked: true }, y: { stacked: true } } : {}
+                            }
+                        });
+                    }
+
+                    // Alt özet
+                    const ozet = result.ozet;
+                    if (ozet && ozet.toplamAriza > 0) {
+                        const garantiOrani = Math.round((ozet.garantiIciToplam / ozet.toplamAriza) * 100);
+                        const durum = ozet.garantiIciToplam > ozet.garantiDisiToplam ? '⚠️ Kalite sorunu' : '✅ Normal';
+                        document.getElementById('servisChart-summary').innerHTML =
+                            `Toplam <strong>${ozet.toplamAriza}</strong> arıza. Garanti içi: <strong>%${garantiOrani}</strong>. ${durum}`;
+                    } else {
+                        document.getElementById('servisChart-summary').textContent = 'Servis kaydı bulunamadı.';
+                    }
+                });
+        }
+
+        // ===== GRAFİK 4: TESLİMAT GECİKMELERİ =====
+        function loadTeslimatGecikme(tedarikciId, startYear, endYear) {
+            return fetch(`/api/tedarikci/teslimat-gecikme/${tedarikciId}?startYear=${startYear}&endYear=${endYear}`)
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Teslimat gecikme:', result);
+                    document.getElementById('teslimatChart-source').textContent = '✅ tedarikci_kalite';
+
+                    if (!result.success || !result.data || result.data.length === 0) {
+                        document.getElementById('teslimatChart-summary').textContent = 'Veri bulunamadı.';
+                        return;
+                    }
+
+                    const labels = result.data.map(d => d.yil);
+                    const planlanan = result.data.map(d => parseFloat(d.planlanan_sure || 0));
+                    const gerceklesen = result.data.map(d => parseFloat(d.gerceklesen_sure || 0));
+
+                    const chartType = document.getElementById('teslimatChart-type').value;
+                    if (charts.teslimat) charts.teslimat.destroy();
+
+                    const ctx = document.getElementById('teslimatChart').getContext('2d');
+                    charts.teslimat = new Chart(ctx, {
+                        type: chartType,
+                        data: {
+                            labels,
+                            datasets: [
+                                { label: 'Planlanan Süre (hafta)', data: planlanan, backgroundColor: '#28A745', borderColor: '#28A745' },
+                                { label: 'Gerçekleşen Süre (hafta)', data: gerceklesen, backgroundColor: '#FFC107', borderColor: '#FFC107' }
+                            ]
+                        },
+                        options: {
+                            plugins: { legend: { position: 'top' } }
+                        }
+                    });
+
+                    // Alt özet
+                    const ozet = result.ozet;
+                    if (ozet && ozet.ortGecikme !== undefined) {
+                        const durum = ozet.ortGecikme > 0.5 ? '⚠️ Gecikme var' : '✅ Zamanında';
+                        document.getElementById('teslimatChart-summary').innerHTML =
+                            `Ort. gecikme: <strong>${ozet.ortGecikme.toFixed(2)} hafta</strong>. ${durum}`;
+                    } else {
+                        document.getElementById('teslimatChart-summary').textContent = 'Yeterli veri bulunamadı.';
+                    }
+                });
+        }
+
+        // ===== KPI ÖZET =====
+        function loadKPIOzet(tedarikciId, yil) {
+            return fetch(`/api/tedarikci/ozet/${tedarikciId}?yil=${yil}`)
+                .then(response => response.json())
+                .then(result => {
+                    console.log('KPI özet:', result);
+                    if (result.success && result.data) {
+                        const d = result.data;
+                        // String değerleri number'a dönüştür
+                        const kalite = parseFloat(d.ort_kalite) || 0;
+                        const ppm = parseFloat(d.ort_ppm) || 0;
+                        const teslimat = parseFloat(d.ort_teslimat) || 0;
+                        const gecikme = parseFloat(d.ort_gecikme) || 0;
+
+                        // KPI kartlarını güncelle
+                        document.getElementById('kpi-quality').innerHTML =
+                            `${kalite.toFixed(1)}<span class="kpi-unit">%</span>`;
+                        document.getElementById('kpi-ppm').innerHTML =
+                            `${Math.round(ppm)}<span class="kpi-unit">ppm</span>`;
+                        document.getElementById('kpi-teslimat').innerHTML =
+                            `${teslimat.toFixed(1)}<span class="kpi-unit">hafta</span>`;
+                        document.getElementById('kpi-gecikme').innerHTML =
+                            `${gecikme.toFixed(2)}<span class="kpi-unit">hafta</span>`;
+                    }
+                })
+                .catch(error => console.error('KPI yükleme hatası:', error));
+        }
+
+        // ===== ANALİZ GÜNCELLEMESİ =====
+        function updateAnalysis(tedarikciId) {
+            const select = document.getElementById('tedarikciSelect');
+            const tedarikciAdi = select.options[select.selectedIndex].text;
+
+            const analysisEl = document.getElementById('analysis-text');
+            const recEl = document.getElementById('analysis-recommendation');
+
+            // KPI değerlerini al
+            const kaliteEl = document.getElementById('kpi-quality');
+            const ppmEl = document.getElementById('kpi-ppm');
+            const gecikmeEl = document.getElementById('kpi-gecikme');
+
+            const kalite = parseFloat(kaliteEl.textContent) || 0;
+            const ppm = parseInt(ppmEl.textContent) || 0;
+            const gecikme = parseFloat(gecikmeEl.textContent) || 0;
+
+            // Grafik özetlerinden veri al
+            const kaliteSummary = document.getElementById('qualityChart-summary').textContent;
+            const ppmSummary = document.getElementById('ppmChart-summary').textContent;
+            const servisSummary = document.getElementById('servisChart-summary').textContent;
+            const teslimatSummary = document.getElementById('teslimatChart-summary').textContent;
+
+            // Analiz skorları
+            let puanlar = [];
+            let sorunlar = [];
+
+            // Kalite değerlendirmesi
+            if (kalite >= 95) {
+                puanlar.push('✅ Kalite skoru mükemmel (%' + kalite.toFixed(1) + ')');
+            } else if (kalite >= 85) {
+                puanlar.push('⚠️ Kalite skoru kabul edilebilir (%' + kalite.toFixed(1) + ')');
+            } else {
+                sorunlar.push('❌ Kalite skoru düşük (%' + kalite.toFixed(1) + ')');
+            }
+
+            // PPM değerlendirmesi
+            if (ppm <= 100) {
+                puanlar.push('✅ PPM oranı çok iyi (' + ppm + ' ppm)');
+            } else if (ppm <= 500) {
+                puanlar.push('⚠️ PPM oranı kabul edilebilir (' + ppm + ' ppm)');
+            } else {
+                sorunlar.push('❌ PPM oranı yüksek (' + ppm + ' ppm)');
+            }
+
+            // Gecikme değerlendirmesi
+            if (gecikme <= 0.5) {
+                puanlar.push('✅ Teslimat gecikmeleri minimal (' + gecikme.toFixed(2) + ' hafta)');
+            } else if (gecikme <= 1.5) {
+                puanlar.push('⚠️ Teslimat gecikmeleri tolere edilebilir (' + gecikme.toFixed(2) + ' hafta)');
+            } else {
+                sorunlar.push('❌ Teslimat gecikmeleri yüksek (' + gecikme.toFixed(2) + ' hafta)');
+            }
+
+            // Servis durumu (garanti içi arıza kontrolü)
+            if (servisSummary.includes('Kalite sorunu')) {
+                sorunlar.push('❌ Garanti içi arıza oranı yüksek');
+            } else if (servisSummary.includes('Normal')) {
+                puanlar.push('✅ Servis performansı normal');
+            }
+
+            // Karar önerisi
+            let karar = '';
+            let kararRenk = '';
+
+            if (sorunlar.length === 0) {
+                karar = '✅ <strong style="color:#28A745;">Sözleşme yenilemesi yapılabilir.</strong> Tedarikçi tüm kriterlerde başarılı performans göstermektedir.';
+                kararRenk = '#28A745';
+            } else if (sorunlar.length === 1) {
+                karar = '⚠️ <strong style="color:#FFC107;">Sözleşme yenilemesi koşullu yapılabilir.</strong> İyileştirme gerekli alanlar mevcut.';
+                kararRenk = '#FFC107';
+            } else {
+                karar = '❌ <strong style="color:#DC3545;">Alternatif tedarikçiler değerlendirilmelidir.</strong> Birden fazla kritik sorun tespit edildi.';
+                kararRenk = '#DC3545';
+            }
+
+            analysisEl.innerHTML = `<strong>${tedarikciAdi}</strong> için detaylı performans analizi:`;
+
+            recEl.innerHTML = `
+                <div style="margin-top: 12px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 4px solid ${kararRenk};">
+                    <div style="margin-bottom: 12px;">
+                        ${puanlar.map(p => '<div style="margin: 4px 0;">' + p + '</div>').join('')}
+                        ${sorunlar.map(s => '<div style="margin: 4px 0;">' + s + '</div>').join('')}
+                    </div>
+                    <div style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        📋 <strong>Karar Önerisi:</strong><br>
+                        ${karar}
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>

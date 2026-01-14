@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS — Intralojistik</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="/img/mercedes.jpg" alt="Mercedes-Benz" class="sidebar-logo">
+                <h1 class="sidebar-title">Mercedes-Benz</h1>
+                <p class="sidebar-subtitle">Karar Destek Sistemi</p>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <p class="nav-section-title">Genel Bakış</p>
+                    <a href="/" class="nav-item"><span class="nav-item-icon">📊</span>Ana Panel</a>
+                </div>
+                <div class="nav-section">
+                    <p class="nav-section-title">Stratejik Senaryolar</p>
+                    <a href="/production" class="nav-item"><span class="nav-item-icon">🏭</span>1. Üretim</a>
+                    <a href="/supplier" class="nav-item"><span class="nav-item-icon">📦</span>2. Tedarikçi</a>
+                    <a href="/welding" class="nav-item"><span class="nav-item-icon">⚡</span>3. Kaynak</a>
+                    <a href="/logistics" class="nav-item active"><span class="nav-item-icon">🚛</span>4. Lojistik</a>
+
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2 class="header-title">Senaryo 4 — Intralojistik</h2>
+                <div class="header-actions">
+                    <span class="header-time" id="headerTime"></span>
+                    <span id="dbStatus" class="db-status">Baglaniyor...</span>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Forklift vs AGV Analizi</h1>
+                    <p class="page-subtitle">Intralojistik kaza, bekleme ve maliyet karsilastirmasi</p>
+                </div>
+
+                <!-- KPI KARTLARI -->
+                <section class="kpi-grid">
+                    <div class="kpi-card">
+                        <p class="kpi-label">Forklift Kaza (Son Yil)</p>
+                        <p class="kpi-value" id="kpi-forklift-kaza">--<span class="kpi-unit">adet</span></p>
+                    </div>
+                    <div class="kpi-card success">
+                        <p class="kpi-label">AGV Kaza (Son Yil)</p>
+                        <p class="kpi-value" id="kpi-agv-kaza">--<span class="kpi-unit">adet</span></p>
+                    </div>
+                    <div class="kpi-card warning">
+                        <p class="kpi-label">Kaza Maliyeti Farki</p>
+                        <p class="kpi-value" id="kpi-kaza-maliyet">--<span class="kpi-unit">€</span></p>
+                    </div>
+                    <div class="kpi-card info">
+                        <p class="kpi-label">Bekleme Farki</p>
+                        <p class="kpi-value" id="kpi-bekleme">--<span class="kpi-unit">dk</span></p>
+                    </div>
+                </section>
+
+                <!-- GRAFIKLER -->
+                <section class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">1. Forklift vs AGV Kaza Trendi</h3>
+                            <span class="chart-source" id="kazaChart-source">...</span>
+                        </div>
+                        <div class="chart-container"><canvas id="kazaChart"></canvas></div>
+                        <div class="chart-summary" id="kazaChart-summary"></div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">2. Bekleme Sureleri Karsilastirmasi</h3>
+                            <span class="chart-source" id="beklemeChart-source">...</span>
+                        </div>
+                        <div class="chart-container"><canvas id="beklemeChart"></canvas></div>
+                        <div class="chart-summary" id="beklemeChart-summary"></div>
+                    </div>
+                </section>
+
+                <section class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">3. Yillik Maliyet Karsilastirmasi</h3>
+                            <span class="chart-source" id="maliyetChart-source">...</span>
+                        </div>
+                        <div class="chart-container"><canvas id="maliyetChart"></canvas></div>
+                        <div class="chart-summary" id="maliyetChart-summary"></div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">4. AGV Gecisinin Kazanimlari</h3>
+                            <span class="chart-source" id="kazancChart-source">...</span>
+                        </div>
+                        <div class="chart-container"><canvas id="kazancChart"></canvas></div>
+                        <div class="chart-summary" id="kazancChart-summary"></div>
+                    </div>
+                </section>
+
+                <!-- ANALIZ VE ONERI KUTUSU -->
+                <div class="analysis-box" style="background: #000; color: #fff;">
+                    <h4 class="analysis-title" style="color: #fff;">📊 Sistem Analizi ve Oneriler</h4>
+                    <p class="analysis-text" id="analysis-text" style="color: #fff;">Veriler analiz ediliyor...</p>
+                    <div class="analysis-recommendation" id="analysis-recommendation"
+                        style="color: #fff; background: rgba(255,255,255,0.1);"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        let charts = {};
+        let hesaplananKazaMaliyeti = 0; // Tüm grafikler için paylaşılan değer
+        let sonYilForkliftKaza = 0; // Analiz için
+        let sonYilAgvKaza = 0; // Analiz için
+        const KAZA_BIRIM_MALIYET = 5000; // EUR - tek bir yerde tanımlı
+
+        document.addEventListener('DOMContentLoaded', () => {
+            KDS.init('logistics');
+            loadAllData();
+        });
+
+        async function loadAllData() {
+            // SIRA ONEMLI: Kaza grafigi once cizilmeli ki hesaplananKazaMaliyeti set olsun
+            await drawKazaChart();
+            await Promise.all([
+                drawBeklemeChart(),
+                drawMaliyetChart(),
+                drawKazancChart()
+            ]);
+            updateAnalysis();
+        }
+
+        function updateAnalysis() {
+            // Dinamik oneri metni olustur
+            let durum = '';
+            let oneri = '';
+
+            // Kaza azalma orani hesapla
+            const kazaAzalmaOrani = sonYilForkliftKaza > 0 ? Math.round(((sonYilForkliftKaza - sonYilAgvKaza) / sonYilForkliftKaza) * 100) : 0;
+
+            if (hesaplananKazaMaliyeti > 300000) {
+                durum = '<strong style="color:#28A745;">Yuksek Kazanc Potansiyeli:</strong> Forklift-AGV kaza farki yillik ' + (hesaplananKazaMaliyeti / 1000).toFixed(0) + 'K EUR tasarruf potansiyeli sunuyor.';
+                oneri = '<p><strong>Oneri:</strong> AGV yatirimina oncelik verilmesi, kaza maliyetlerini onemli olcude dusurur.</p>';
+            } else if (hesaplananKazaMaliyeti > 100000) {
+                durum = '<strong style="color:#FFC107;">Orta Seviye Kazanc:</strong> AGV gecisi yillik ' + (hesaplananKazaMaliyeti / 1000).toFixed(0) + 'K EUR tasarruf saglar.';
+                oneri = '<p><strong>Oneri:</strong> Kademeli AGV gecisi planlanabilir.</p>';
+            } else {
+                durum = '<strong>Mevcut Durum:</strong> Forklift ve AGV kaza maliyetleri arasinda dusuk fark var.';
+                oneri = '<p><strong>Oneri:</strong> Mevcut yapiyi optimize edin.</p>';
+            }
+
+            // Kaza azalma bilgisi ekle
+            oneri += '<p style="margin-top:10px; color:#28A745;"><strong>📉 AGV\'ye gecilirse kazalarda %' + kazaAzalmaOrani + ' dusus beklenebilir.</strong> (Forklift: ' + sonYilForkliftKaza + ' → AGV: ' + sonYilAgvKaza + ' kaza)</p>';
+
+            document.getElementById('analysis-text').innerHTML = durum;
+            document.getElementById('analysis-recommendation').innerHTML = oneri;
+        }
+
+        async function drawKazaChart() {
+            try {
+                const response = await fetch('/api/lojistik/kaza');
+                const result = await response.json();
+                if (!result.success || !result.data) return;
+
+                const data = result.data;
+                const yillar = [...new Set(data.map(d => d.yil))].sort();
+
+                const forkliftData = yillar.map(y => {
+                    const row = data.find(d => d.yil === y && d.tasima_tipi === 'FORKLIFT');
+                    return parseInt(row?.toplam_kaza) || 0;
+                });
+                const agvData = yillar.map(y => {
+                    const row = data.find(d => d.yil === y && d.tasima_tipi === 'AGV');
+                    return parseInt(row?.toplam_kaza) || 0;
+                });
+
+                // KPI guncelle - AYNI VERI KAYNAGINDAN
+                sonYilForkliftKaza = forkliftData[forkliftData.length - 1] || 0; // GLOBAL
+                sonYilAgvKaza = agvData[agvData.length - 1] || 0; // GLOBAL
+                const kazaFarki = sonYilForkliftKaza - sonYilAgvKaza;
+                hesaplananKazaMaliyeti = kazaFarki * KAZA_BIRIM_MALIYET; // GLOBAL
+
+                document.getElementById('kpi-forklift-kaza').innerHTML = sonYilForkliftKaza + '<span class="kpi-unit">adet</span>';
+                document.getElementById('kpi-agv-kaza').innerHTML = sonYilAgvKaza + '<span class="kpi-unit">adet</span>';
+                document.getElementById('kpi-kaza-maliyet').innerHTML = (hesaplananKazaMaliyeti / 1000).toFixed(0) + 'K<span class="kpi-unit">€</span>';
+
+                const ctx = document.getElementById('kazaChart').getContext('2d');
+                if (charts.kaza) charts.kaza.destroy();
+
+                charts.kaza = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: yillar,
+                        datasets: [
+                            { label: 'Forklift', data: forkliftData, borderColor: '#DC3545', backgroundColor: 'rgba(220,53,69,0.1)', tension: 0.3, fill: true },
+                            { label: 'AGV', data: agvData, borderColor: '#28A745', backgroundColor: 'rgba(40,167,69,0.1)', tension: 0.3, fill: true }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Kaza Sayisi' } } } }
+                });
+
+                document.getElementById('kazaChart-source').textContent = 'intralojistik';
+                document.getElementById('kazaChart-summary').textContent = 'Forklift kazalari AGV ye gore ortalama ' + Math.round((forkliftData.reduce((a, b) => a + b, 0) / agvData.reduce((a, b) => a + b, 0) || 1)) + 'x daha fazla.';
+            } catch (e) { console.error(e); }
+        }
+
+        async function drawBeklemeChart() {
+            try {
+                const response = await fetch('/api/lojistik/bekleme');
+                const result = await response.json();
+                if (!result.success || !result.data) return;
+
+                const data = result.data;
+                const yillar = [...new Set(data.map(d => d.yil))].sort();
+
+                const forkliftData = yillar.map(y => {
+                    const row = data.find(d => d.yil === y && d.tasima_tipi === 'FORKLIFT');
+                    return parseFloat(row?.ort_bekleme) || 0;
+                });
+                const agvData = yillar.map(y => {
+                    const row = data.find(d => d.yil === y && d.tasima_tipi === 'AGV');
+                    return parseFloat(row?.ort_bekleme) || 0;
+                });
+
+                // KPI guncelle
+                const sonForklift = forkliftData[forkliftData.length - 1] || 0;
+                const sonAgv = agvData[agvData.length - 1] || 0;
+                document.getElementById('kpi-bekleme').innerHTML = (sonForklift - sonAgv).toFixed(1) + '<span class="kpi-unit">dk</span>';
+
+                const ctx = document.getElementById('beklemeChart').getContext('2d');
+                if (charts.bekleme) charts.bekleme.destroy();
+
+                charts.bekleme = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: yillar,
+                        datasets: [
+                            { label: 'Forklift', data: forkliftData, backgroundColor: '#DC3545' },
+                            { label: 'AGV', data: agvData, backgroundColor: '#28A745' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Ort. Bekleme (dk)' } } } }
+                });
+
+                document.getElementById('beklemeChart-source').textContent = 'intralojistik';
+                document.getElementById('beklemeChart-summary').textContent = 'AGV bekleme suresi Forklift in %' + Math.round((1 - sonAgv / sonForklift) * 100) + ' altinda.';
+            } catch (e) { console.error(e); }
+        }
+
+        async function drawMaliyetChart() {
+            try {
+                const response = await fetch('/api/lojistik/maliyet');
+                const result = await response.json();
+                if (!result.success || !result.data) return;
+
+                const data = result.data;
+                const yillar = [...new Set(data.map(d => d.yil))].sort();
+
+                const forkliftData = yillar.map(y => {
+                    const row = data.find(d => d.yil === y && d.tasima_tipi === 'FORKLIFT');
+                    return parseFloat(row?.toplam_maliyet) || 0;
+                });
+                const agvData = yillar.map(y => {
+                    const row = data.find(d => d.yil === y && d.tasima_tipi === 'AGV');
+                    return parseFloat(row?.toplam_maliyet) || 0;
+                });
+
+                const ctx = document.getElementById('maliyetChart').getContext('2d');
+                if (charts.maliyet) charts.maliyet.destroy();
+
+                charts.maliyet = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: yillar,
+                        datasets: [
+                            { label: 'Forklift', data: forkliftData, backgroundColor: '#DC3545' },
+                            { label: 'AGV', data: agvData, backgroundColor: '#28A745' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Maliyet (EUR)' } } } }
+                });
+
+                document.getElementById('maliyetChart-source').textContent = 'intralojistik';
+
+                // Son 2 yil forklift maliyet trend analizi
+                const son2Yil = forkliftData.slice(-2);
+                const son2YilAgv = agvData.slice(-2);
+                let trendMesaji = '';
+
+                if (son2Yil.length >= 2) {
+                    const forkliftDegisim = ((son2Yil[1] - son2Yil[0]) / son2Yil[0]) * 100;
+                    const agvDegisim = ((son2YilAgv[1] - son2YilAgv[0]) / son2YilAgv[0]) * 100;
+
+                    if (forkliftDegisim > 10) {
+                        trendMesaji = '⚠️ Son 2 yilda Forklift maliyeti %' + forkliftDegisim.toFixed(0) + ' artti!';
+                    } else if (forkliftDegisim > 0) {
+                        trendMesaji = 'Son 2 yilda Forklift maliyeti %' + forkliftDegisim.toFixed(0) + ' artti.';
+                    } else {
+                        trendMesaji = 'Son 2 yilda Forklift maliyeti %' + Math.abs(forkliftDegisim).toFixed(0) + ' azaldi.';
+                    }
+
+                    if (agvDegisim < forkliftDegisim) {
+                        trendMesaji += ' AGV daha stabil.';
+                    }
+                }
+
+                document.getElementById('maliyetChart-summary').textContent = trendMesaji;
+            } catch (e) { console.error(e); }
+        }
+
+        async function drawKazancChart() {
+            try {
+                const response = await fetch('/api/lojistik/agv-kazanc');
+                const result = await response.json();
+                if (!result.success || !result.data) return;
+
+                const data = result.data;
+                const birimKarlar = data.birimKarlar || {};
+                // NOT: Kaza maliyeti KPI zaten drawKazaChart'ta guncelleniyor
+
+                const ctx = document.getElementById('kazancChart').getContext('2d');
+                if (charts.kazanc) charts.kazanc.destroy();
+
+                charts.kazanc = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Iscilik', 'Kaza', 'Bekleme', 'Enerji'],
+                        datasets: [{
+                            label: 'Yillik Tasarruf (EUR)',
+                            data: [birimKarlar.iscilikKar || 0, hesaplananKazaMaliyeti, birimKarlar.beklemeKar || 0, birimKarlar.enerjiKar || 0],
+                            backgroundColor: ['#17A2B8', '#28A745', '#FFC107', '#6C757D']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: { x: { title: { display: true, text: 'EUR' } } }
+                    }
+                });
+
+                document.getElementById('kazancChart-source').textContent = 'intralojistik';
+                // Toplami grafik degerlerinden hesapla
+                const toplamTasarruf = (birimKarlar.iscilikKar || 0) + hesaplananKazaMaliyeti + (birimKarlar.beklemeKar || 0) + (birimKarlar.enerjiKar || 0);
+                document.getElementById('kazancChart-summary').textContent = 'AGV ile yillik toplam tasarruf: ' + toplamTasarruf.toLocaleString('tr-TR') + ' EUR';
+            } catch (e) { console.error(e); }
+        }
+    </script>
+</body>
+
+</html>

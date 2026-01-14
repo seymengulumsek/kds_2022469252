@@ -1,0 +1,1245 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS — Üretim Hattı Dönüşümü</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="/img/mercedes.jpg" alt="Mercedes-Benz" class="sidebar-logo">
+                <h1 class="sidebar-title">Mercedes-Benz</h1>
+                <p class="sidebar-subtitle">Karar Destek Sistemi</p>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <p class="nav-section-title">Genel Bakış</p>
+                    <a href="/" class="nav-item"><span class="nav-item-icon">📊</span>Ana Panel</a>
+                </div>
+                <div class="nav-section">
+                    <p class="nav-section-title">Stratejik Senaryolar</p>
+                    <a href="/production" class="nav-item active"><span class="nav-item-icon">🏭</span>1. Üretim</a>
+                    <a href="/supplier" class="nav-item"><span class="nav-item-icon">📦</span>2. Tedarikçi</a>
+                    <a href="/welding" class="nav-item"><span class="nav-item-icon">⚡</span>3. Kaynak</a>
+                    <a href="/logistics" class="nav-item"><span class="nav-item-icon">🚛</span>4. Lojistik</a>
+
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2 class="header-title">Senaryo 1 — Üretim Hattı Dönüşümü</h2>
+                <div class="header-actions">
+                    <span class="header-time" id="headerTime"></span>
+                    <span id="dbStatus" class="db-status">🔄 Bağlanıyor...</span>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">ICE → EV Dönüşüm Analizi</h1>
+                    <p class="page-subtitle">Geçmiş veriler ve gelecek tahminleri</p>
+                </div>
+
+                <!-- PARAMETRE PANELİ -->
+                <div class="controls">
+                    <h3 class="controls-title">📊 Senaryo Parametreleri</h3>
+                    <div class="control-group">
+                        <!-- GÖRÜNÜM MODU -->
+                        <div class="control-item">
+                            <label class="control-label">Görünüm Modu</label>
+                            <select class="control-select" id="viewMode">
+                                <option value="yil" selected>Yıllık</option>
+                                <option value="ay">Aylık</option>
+                            </select>
+                        </div>
+
+                        <!-- GEÇMİŞ VERİ PARAMETRELERİ -->
+                        <div class="control-item">
+                            <label class="control-label">Başlangıç Yılı</label>
+                            <select class="control-select" id="startYear">
+                                <option value="2016">2016</option>
+                                <option value="2018">2018</option>
+                                <option value="2020" selected>2020</option>
+                                <option value="2022">2022</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label class="control-label">Bitiş Yılı (Geçmiş)</label>
+                            <select class="control-select" id="endYear">
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                            </select>
+                        </div>
+
+                        <!-- TAHMİN PARAMETRELERİ -->
+                        <div class="control-item">
+                            <label class="control-label">Tahmin Süresi</label>
+                            <select class="control-select" id="forecastMonths">
+                                <option value="3">3 Ay</option>
+                                <option value="6">6 Ay</option>
+                                <option value="9">9 Ay</option>
+                                <option value="12" selected>12 Ay</option>
+                            </select>
+                        </div>
+                        <!-- ICE / EV DEĞİŞİM SLIDER'LARI YAN YANA -->
+                        <div style="display: flex; gap: 15px; margin-top: 10px;">
+                            <div class="control-item" style="flex: 1;">
+                                <label class="control-label">ICE Değişim (%)</label>
+                                <input type="range" class="control-slider" id="iceChange" min="-100" max="100"
+                                    value="-10" style="width: 100%;">
+                                <span class="slider-value" id="iceChangeValue">-10%</span>
+                            </div>
+                            <div class="control-item" style="flex: 1;">
+                                <label class="control-label">EV Değişim (%)</label>
+                                <input type="range" class="control-slider" id="evChange" min="-100" max="100" value="20"
+                                    style="width: 100%;">
+                                <span class="slider-value" id="evChangeValue">+20%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-item">
+                        <button class="btn btn-primary" id="btnRefresh">🔄 Hesapla</button>
+                    </div>
+                </div>
+
+                <!-- KPI KARTLARI -->
+                <section class="kpi-grid">
+                    <div class="kpi-card">
+                        <p class="kpi-label">ICE Üretim (Son Yıl)</p>
+                        <p class="kpi-value" id="kpi-ice">--<span class="kpi-unit">adet</span></p>
+                    </div>
+                    <div class="kpi-card success">
+                        <p class="kpi-label">EV Üretim (Son Yıl)</p>
+                        <p class="kpi-value" id="kpi-ev">--<span class="kpi-unit">adet</span></p>
+                    </div>
+                    <div class="kpi-card warning">
+                        <p class="kpi-label">Tahmin ICE (12 Ay)</p>
+                        <p class="kpi-value" id="kpi-ice-forecast">--<span class="kpi-unit">adet</span></p>
+                    </div>
+                    <div class="kpi-card info">
+                        <p class="kpi-label">Tahmin EV (12 Ay)</p>
+                        <p class="kpi-value" id="kpi-ev-forecast">--<span class="kpi-unit">adet</span></p>
+                    </div>
+                </section>
+
+                <!-- GRAFİKLER -->
+                <section class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">1. ICE Talep & Üretim Trendi</h3>
+                            <select id="chart1Type"
+                                style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="line" selected>Çizgi</option>
+                                <option value="bar">Çubuk</option>
+                            </select>
+                            <span class="chart-source" id="iceChart-source">⏳</span>
+                        </div>
+                        <div class="chart-container"><canvas id="iceChart"></canvas></div>
+                        <div class="chart-summary" id="iceChart-summary"
+                            style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">2. EV Talep & Üretim Trendi</h3>
+                            <select id="chart2Type"
+                                style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="line" selected>Çizgi</option>
+                                <option value="bar">Çubuk</option>
+                            </select>
+                            <span class="chart-source" id="evChart-source">⏳</span>
+                        </div>
+                        <div class="chart-container"><canvas id="evChart"></canvas></div>
+                        <div class="chart-summary" id="evChart-summary"
+                            style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">3. Senaryo Hat Dağılımı (EV/ICE)</h3>
+                            <select id="chart3Type"
+                                style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="bar" selected>Çubuk</option>
+                                <option value="pie">Pasta</option>
+                            </select>
+                            <span class="chart-source" id="hatDagilimChart-source">⏳</span>
+                        </div>
+                        <div class="chart-container"><canvas id="hatDagilimChart"></canvas></div>
+                        <div class="chart-summary" id="hatDagilimChart-summary"
+                            style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">4. Kapasite Yeterlilik Analizi</h3>
+                            <select id="chart4Type"
+                                style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px;">
+                                <option value="bar" selected>Çubuk</option>
+                                <option value="line">Çizgi</option>
+                            </select>
+                            <span class="chart-source" id="kapasiteChart-source">⏳</span>
+                        </div>
+                        <div class="chart-container"><canvas id="kapasiteChart"></canvas></div>
+                        <div class="chart-summary" id="kapasiteChart-summary"
+                            style="padding: 10px 12px; font-size: 13px; color: #fff; border-top: 1px solid #333; background: #1a1a2e; border-radius: 0 0 8px 8px;">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ANALİZ KUTUSU -->
+                <div class="analysis-box">
+                    <h4 class="analysis-title">🔍 Senaryo Analizi</h4>
+                    <p class="analysis-text" id="analysis-text">Parametreleri ayarlayın ve "Hesapla" butonuna tıklayın.
+                    </p>
+                    <div class="analysis-recommendation" id="analysis-recommendation"></div>
+                </div>
+
+                <!-- DEBUG PANELİ -->
+                <div class="debug-panel"
+                    style="margin-top:20px;padding:15px;background:#f8f9fa;border-radius:8px;font-size:12px;">
+                    <h4 style="margin:0 0 10px 0;">📊 Veri Kaynağı Doğrulama</h4>
+                    <div id="debugContent">Parametreleri ayarlayın ve "Hesapla" butonuna tıklayın.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // GLOBAL ERROR HANDLER
+        window.onerror = function (msg, url, line, col, error) {
+            const debugEl = document.getElementById('debugContent');
+            if (debugEl) {
+                debugEl.innerHTML += `<div style="color:white;background:red;padding:5px;margin:2px;">❌ JS Error: ${msg} <br> ${url}:${line}:${col}</div>`;
+                document.querySelector('.debug-panel').style.display = 'block';
+            }
+            return false;
+        };
+
+        window.addEventListener('unhandledrejection', function (event) {
+            const debugEl = document.getElementById('debugContent');
+            if (debugEl) {
+                debugEl.innerHTML += `<div style="color:white;background:orange;padding:5px;margin:2px;">⚠️ Async Error: ${event.reason}</div>`;
+                document.querySelector('.debug-panel').style.display = 'block';
+            }
+        });
+
+        // Sayfa state
+        let historicalData = null;
+        let forecastData = null;
+        let charts = {};
+        let isCalculated = false; // Hesapla butonuna basildi mi?
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (typeof Chart === 'undefined') {
+                    throw new Error('Chart.js library yuklenemedi! Internet baglantinizi kontrol edin.');
+                }
+                if (typeof KDS === 'undefined') {
+                    throw new Error('KDS library (main.js) yuklenemedi!');
+                }
+                KDS.init('production');
+                setupEventListeners();
+
+                // FORCE LOAD
+                console.log('Force loading data...');
+                document.getElementById('debugContent').innerHTML += '<div>Starting Data Load...</div>';
+                loadAllData(false);
+            } catch (e) {
+                console.error('Init hatasi:', e);
+                document.getElementById('debugContent').innerHTML += `<div style="background:red;color:white">FATAL: ${e.message}</div>`;
+            }
+        });
+
+        function setupEventListeners() {
+            // Slider'lar - Sadece değer günceller, veriyi yenilemez
+            KDS.setupSlider('iceChange', 'iceChangeValue', v => `${v > 0 ? '+' : ''}${v}%`);
+            KDS.setupSlider('evChange', 'evChangeValue', v => `${v > 0 ? '+' : ''}${v}%`);
+
+            // Hesapla butonu - Veri yeniler ve senaryoyu uygular
+            document.getElementById('btnRefresh').addEventListener('click', () => {
+                isCalculated = true;
+                loadAllData(true);
+            });
+
+            // View mod degisikligi grafigi etkiler, ama senaryoyu bozmaz
+            document.getElementById('viewMode').addEventListener('change', () => loadAllData(isCalculated));
+
+            // Tarih ve Tahmin Süresi değişimleri de hesaplama gerektirir, 
+            // ama kullanıcı 'Hesapla' demeden grafikleri bozmamak için 
+            // bu inputları da 'Hesapla' butonuna bağlamak daha doğru olur.
+            // Ancak UX gereği yıl değişiminde grafiğin güncellenmesi beklenir.
+            // Sadece sliderları (CHANGE) manuel tetiklemeye alalım.
+            ['viewMode', 'startYear', 'endYear', 'forecastMonths'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => loadAllData(isCalculated));
+            });
+
+            // Grafik türü değişimi
+            ['chart1Type', 'chart2Type', 'chart3Type', 'chart4Type'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => loadAllData(isCalculated));
+            });
+        }
+
+        function getParams() {
+            const viewMode = document.getElementById('viewMode').value;
+            const iceChangePercent = parseInt(document.getElementById('iceChange').value);
+            const evChangePercent = parseInt(document.getElementById('evChange').value);
+
+            return {
+                viewMode,
+                startYear: parseInt(document.getElementById('startYear').value),
+                endYear: parseInt(document.getElementById('endYear').value),
+                months: parseInt(document.getElementById('forecastMonths').value),
+                iceChangePercent,
+                evChangePercent
+            };
+        }
+
+        async function loadAllData(calculateScenario = false) {
+            const params = getParams();
+
+            document.getElementById('dbStatus').textContent = '🔄 Yükleniyor...';
+            document.getElementById('dbStatus').className = 'db-status loading';
+
+            try {
+                // 1. Geçmiş veriyi yükle
+                await loadHistoricalData(params);
+
+                // 2. Tahmin hesapla
+                await loadForecastData(params);
+
+                // 3. KPI ve Analiz
+                updateKPIs(params);
+
+                // 4. Grafikleri çiz
+                drawIceChart(params);
+                drawEvChart(params);
+
+                // SENARYO DAĞILIMI ÖZEL MANTIK
+                await drawHatSenaryoChart(params, calculateScenario);
+
+                await drawKapasiteChart(params);
+
+                // 5. Trend Özeti (Client-side hesaplama)
+                calculateTrendOzet(params);
+
+                // Analiz sadece hesapla denildiyse guncellensin
+                if (calculateScenario) {
+                    updateAnalysis(params);
+                } else {
+                    document.getElementById('analysis-text').textContent = 'Senaryo analizi için parametreleri ayarlayıp "Hesapla" butonuna basın.';
+                    document.getElementById('analysis-recommendation').innerHTML = '';
+                }
+                updateDebugPanel(params);
+
+                document.getElementById('dbStatus').textContent = '🟢 MySQL Bağlı';
+                document.getElementById('dbStatus').className = 'db-status connected';
+
+            } catch (error) {
+                console.error('Veri yükleme hatası:', error);
+                document.getElementById('dbStatus').textContent = '🔴 Hata';
+                document.getElementById('dbStatus').className = 'db-status error';
+            }
+        }
+
+        // ===== GRAFİK ALTI TREND ÖZETİ (CLIENT-SIDE) =====
+        function calculateTrendOzet(params) {
+            if (!historicalData || !historicalData.data) return;
+
+            const data = historicalData.data;
+            const startYear = params.startYear;
+            const endYear = params.endYear;
+
+            const filteredData = data.filter(d => d.yil >= startYear && d.yil <= endYear);
+
+            // Helper to calculate Average Annual Growth Rate (AAGR)
+            const calcGrowth = (type) => {
+                const typeData = filteredData.filter(d => d.guc_tipi === type).sort((a, b) => a.yil - b.yil);
+                if (typeData.length < 2) return 0;
+
+                let totalGrowth = 0;
+                let count = 0;
+
+                for (let i = 1; i < typeData.length; i++) {
+                    const prev = parseFloat(typeData[i - 1].toplam_uretim || 0);
+                    const curr = parseFloat(typeData[i].toplam_uretim || 0);
+                    if (prev > 0) {
+                        totalGrowth += ((curr - prev) / prev) * 100;
+                        count++;
+                    }
+                }
+                return count > 0 ? totalGrowth / count : 0;
+            };
+
+            const iceGrowth = calcGrowth('ICE');
+            const evGrowth = calcGrowth('EV');
+            const yilSayisi = endYear - startYear;
+
+            // ICE Özet
+            if (Math.abs(iceGrowth) > 0.01) {
+                const yon = iceGrowth > 0 ? 'artış' : 'azalış';
+                const icon = iceGrowth > 0 ? '📈' : '📉';
+                document.getElementById('iceChart-summary').innerHTML =
+                    `${icon} Son ${yilSayisi} yılda yıllık ortalama <strong>%${Math.abs(iceGrowth).toFixed(2)}</strong> ${yon} göstermektedir.`;
+            } else {
+                document.getElementById('iceChart-summary').textContent = 'Veri stabil veya yetersiz.';
+            }
+
+            // EV Özet
+            if (Math.abs(evGrowth) > 0.01) {
+                const yon = evGrowth > 0 ? 'artış' : 'azalış';
+                const icon = evGrowth > 0 ? '📈' : '📉';
+                document.getElementById('evChart-summary').innerHTML =
+                    `${icon} Yıllık ortalama <strong>%${Math.abs(evGrowth).toFixed(2)}</strong> oranında ${yon} trendi mevcut.`;
+            } else {
+                document.getElementById('evChart-summary').textContent = 'Veri stabil veya yetersiz.';
+            }
+
+            // Hat ve Kapasite Özetleri (Önceki mantık aynen kalabilir veya buradan güncellenebilir)
+            if (window.hatDagilimData && document.getElementById('hatDagilimChart-summary')) {
+                const hData = window.hatDagilimData;
+                const mixedLines = hData.filter(h => h.ice > 0 && h.ev > 0).length;
+                document.getElementById('hatDagilimChart-summary').innerHTML =
+                    mixedLines > 0
+                        ? `⚠️ ${mixedLines} hatta <strong>karma üretim</strong> (ICE+EV) planlanıyor.`
+                        : `✅ Hatlar tamamen ayrıştırılmış durumda.`;
+            }
+
+            if (window.kapasiteAnalizi && document.getElementById('kapasiteChart-summary')) {
+                const ka = window.kapasiteAnalizi;
+                const doluluk = ka.toplamKapasite > 0 ? (ka.toplamTahmin / ka.toplamKapasite) * 100 : 0;
+                document.getElementById('kapasiteChart-summary').innerHTML =
+                    `2026 Tahmini doluluk: <strong>%${doluluk.toFixed(2)}</strong>. ${doluluk > 95 ? '⚠️ Kritik!' : '✅ Uygun.'}`;
+            }
+        }
+
+        async function loadHistoricalData(params) {
+            const url = `/api/uretim/historical?startYear=${params.startYear}&endYear=${params.endYear}`;
+            const debugEl = document.getElementById('debugContent');
+            if (debugEl) debugEl.innerHTML += `<div style="color:blue">API Call: ${url}</div>`;
+            let response = await KDS.fetchData(url);
+
+            // API Hatası veya Boş Veri Durumunda Mock Data Kullan (Fallback)
+            if (!response || !response.data || response.data.length === 0) {
+                if (debugEl) debugEl.innerHTML += `<div style="color:orange">API Empty/Fail. Using Mock. (Resp: ${response ? 'OK' : 'NULL'})</div>`;
+                console.warn('API verisi alınamadı, mock veri kullanılıyor.');
+                document.getElementById('dbStatus').textContent = '⚠️ Mod';
+                document.getElementById('dbStatus').className = 'db-status warning';
+
+                // MOCK DATA OLUŞTUR
+                const mockData = [];
+                for (let y = params.startYear; y <= params.endYear; y++) {
+                    // ICE Verisi
+                    mockData.push({
+                        yil: y,
+                        guc_tipi: 'ICE',
+                        toplam_talep: 100000 + (y - 2020) * -5000 + Math.random() * 5000,
+                        toplam_uretim: 98000 + (y - 2020) * -4800 + Math.random() * 5000,
+                        ort_kapasite: 85
+                    });
+                    // EV Verisi
+                    mockData.push({
+                        yil: y,
+                        guc_tipi: 'EV',
+                        toplam_talep: 40000 + (y - 2020) * 15000 + Math.random() * 5000,
+                        toplam_uretim: 38000 + (y - 2020) * 14500 + Math.random() * 5000,
+                        ort_kapasite: 70
+                    });
+                }
+
+                historicalData = {
+                    success: true,
+                    data: mockData,
+                    meta: { source: 'mock', generated: true }
+                };
+            } else {
+                if (debugEl) {
+                    debugEl.innerHTML += `<div style="color:green">API Success. Rows: ${response.data.length}</div>`;
+                    if (response.data.length > 0) {
+                        debugEl.innerHTML += `<div style="color:black;font-size:10px;background:#eee">Row 0: ${JSON.stringify(response.data[0])}</div>`;
+                    }
+                }
+                historicalData = response;
+            }
+        }
+
+        async function loadForecastData(params) {
+            try {
+                const response = await fetch('/api/uretim/forecast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        months: params.months,
+                        iceChangePercent: params.iceChangePercent,
+                        evChangePercent: params.evChangePercent
+                    })
+                });
+                forecastData = await response.json();
+            } catch (error) {
+                console.error('Forecast hatası:', error);
+                forecastData = null;
+            }
+        }
+
+        // ===== GRAFİK 1: ICE TALEP & ÜRETİM TRENDİ =====
+        function drawIceChart(params) {
+            const debugEl = document.getElementById('debugContent');
+            if (debugEl) debugEl.innerHTML += '<div>-- Drawing ICE Chart --</div>';
+
+            if (!historicalData || !historicalData.data) {
+                if (debugEl) debugEl.innerHTML += '<div style="color:red">No Data for Chart</div>';
+                KDS.showNoData('iceChart');
+                return;
+            }
+
+            const data = historicalData.data;
+            if (debugEl) debugEl.innerHTML += `<div>Data Count: ${data.length}</div>`;
+
+            const isMonthly = params.viewMode === 'ay';
+
+            let labels = [];
+            let iceTalep = [];
+            let iceUretim = [];
+            let iceTahmin = [];
+
+            if (isMonthly) {
+                // AYLIK GÖRÜNÜM: Son 6 ay + gelecek X ay tahmin
+                const lastYear = params.endYear;
+                const aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+                // Son yılın verilerini al ve aylara böl
+                const lastYearData = data.filter(d => d.yil === lastYear && d.guc_tipi === 'ICE');
+                const yillikTalep = lastYearData.reduce((sum, d) => sum + parseFloat(d.toplam_talep || 0), 0);
+                const yillikUretim = lastYearData.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+                const aylikTalep = yillikTalep / 12;
+                const aylikUretim = yillikUretim / 12;
+
+                // Son 6 ay (geriye dönük)
+                for (let i = 6; i >= 1; i--) {
+                    const ay = 12 - i;
+                    labels.push(`${lastYear}/${aylar[ay]}`);
+                    iceTalep.push(aylikTalep * (0.9 + Math.random() * 0.2)); // Simüle
+                    iceUretim.push(aylikUretim * (0.9 + Math.random() * 0.2));
+                    iceTahmin.push(null);
+                }
+
+                // Gelecek aylar (tahmin)
+                const tahminYili = lastYear + 1;
+                const yillikTahmin = yillikUretim * (1 + params.iceChangePercent / 100);
+                const aylikTahmin = yillikTahmin / 12;
+
+                for (let i = 0; i < params.months; i++) {
+                    const ayIdx = i % 12;
+                    labels.push(`${tahminYili}/${aylar[ayIdx]} (T)`);
+                    iceTalep.push(null);
+                    iceUretim.push(null);
+                    iceTahmin.push(aylikTahmin * (1 + (params.iceChangePercent / 100 / 12) * i));
+                }
+            } else {
+                // YILLIK GÖRÜNÜM: Geçmiş yıllar + 2026 tahmin
+                const years = [...new Set(data.map(d => d.yil))].sort((a, b) => a - b);
+                if (debugEl) debugEl.innerHTML += `<div>Years: ${years.join(',')}</div>`;
+
+                years.forEach(y => {
+                    labels.push(y.toString());
+                    const items = data.filter(d => d.yil == y && d.guc_tipi === 'ICE'); // Double equals key for type coercion
+                    const talep = items.reduce((sum, d) => sum + parseFloat(d.toplam_talep || 0), 0);
+                    const uretim = items.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+
+                    iceTalep.push(talep);
+                    iceUretim.push(uretim);
+                    iceTahmin.push(null);
+                });
+
+                if (debugEl) debugEl.innerHTML += `<div>ICE Values: ${iceTalep.join(',')}</div>`;
+
+                // 2026 tahmini ekle
+                const lastUretim = iceUretim.length > 0 ? iceUretim[iceUretim.length - 1] : 0;
+                const tahmin2026 = lastUretim * (1 + params.iceChangePercent / 100);
+                labels.push('2026 (T)');
+                iceTalep.push(null);
+                iceUretim.push(null);
+                iceTahmin.push(tahmin2026);
+            }
+
+            updateSource('iceChart-source', historicalData);
+            KDS.restoreCanvas('iceChart');
+            if (charts.ice) charts.ice.destroy();
+
+            const chartType = document.getElementById('chart1Type').value;
+            charts.ice = KDS.createChart('iceChart', {
+                type: chartType,
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'ICE Talep',
+                            data: iceTalep,
+                            borderColor: '#DC3545',
+                            backgroundColor: chartType === 'bar' ? '#DC3545' : 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.4,
+                            fill: chartType !== 'bar'
+                        },
+                        {
+                            label: 'ICE Üretim',
+                            data: iceUretim,
+                            borderColor: '#6C757D',
+                            backgroundColor: chartType === 'bar' ? '#6C757D' : 'rgba(108, 117, 125, 0.1)',
+                            tension: 0.4,
+                            fill: chartType !== 'bar'
+                        },
+                        {
+                            label: 'ICE Tahmin',
+                            data: iceTahmin,
+                            borderColor: '#FFC107',
+                            backgroundColor: chartType === 'bar' ? '#FFC107' : 'rgba(255, 193, 7, 0.2)',
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                }
+            });
+        }
+
+        // ===== GRAFİK 2: EV TALEP & ÜRETİM TRENDİ =====
+        function drawEvChart(params) {
+            if (!historicalData || !historicalData.data) {
+                KDS.showNoData('evChart');
+                return;
+            }
+
+            const data = historicalData.data;
+            const isMonthly = params.viewMode === 'ay';
+
+            let labels = [];
+            let evTalep = [];
+            let evUretim = [];
+            let evTahmin = [];
+
+            if (isMonthly) {
+                // AYLIK GÖRÜNÜM
+                const lastYear = params.endYear;
+                const aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+                const lastYearData = data.filter(d => d.yil === lastYear && d.guc_tipi === 'EV');
+                const yillikTalep = lastYearData.reduce((sum, d) => sum + parseFloat(d.toplam_talep || 0), 0);
+                const yillikUretim = lastYearData.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+                const aylikTalep = yillikTalep / 12;
+                const aylikUretim = yillikUretim / 12;
+
+                // Son 6 ay
+                for (let i = 6; i >= 1; i--) {
+                    const ay = 12 - i;
+                    labels.push(`${lastYear}/${aylar[ay]}`);
+                    evTalep.push(aylikTalep * (0.9 + Math.random() * 0.2));
+                    evUretim.push(aylikUretim * (0.9 + Math.random() * 0.2));
+                    evTahmin.push(null);
+                }
+
+                // Gelecek aylar
+                const tahminYili = lastYear + 1;
+                const yillikTahmin = yillikUretim * (1 + params.evChangePercent / 100);
+                const aylikTahminVal = yillikTahmin / 12;
+
+                for (let i = 0; i < params.months; i++) {
+                    const ayIdx = i % 12;
+                    labels.push(`${tahminYili}/${aylar[ayIdx]} (T)`);
+                    evTalep.push(null);
+                    evUretim.push(null);
+                    evTahmin.push(aylikTahminVal * (1 + (params.evChangePercent / 100 / 12) * i));
+                }
+            } else {
+                // YILLIK GÖRÜNÜM
+                const years = [...new Set(data.map(d => d.yil))].sort((a, b) => a - b);
+
+                years.forEach(y => {
+                    labels.push(y.toString());
+                    const items = data.filter(d => d.yil === y && d.guc_tipi === 'EV');
+                    evTalep.push(items.reduce((sum, d) => sum + parseFloat(d.toplam_talep || 0), 0));
+                    evUretim.push(items.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0));
+                    evTahmin.push(null);
+                });
+
+                // 2026 tahmini
+                const lastUretim = evUretim[evUretim.length - 1];
+                const tahmin2026 = lastUretim * (1 + params.evChangePercent / 100);
+                labels.push('2026 (T)');
+                evTalep.push(null);
+                evUretim.push(null);
+                evTahmin.push(tahmin2026);
+            }
+
+            updateSource('evChart-source', historicalData);
+            KDS.restoreCanvas('evChart');
+            if (charts.ev) charts.ev.destroy();
+
+            const chartType = document.getElementById('chart2Type').value;
+            charts.ev = KDS.createChart('evChart', {
+                type: chartType,
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'EV Talep',
+                            data: evTalep,
+                            borderColor: '#28A745',
+                            backgroundColor: chartType === 'bar' ? '#28A745' : 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: chartType !== 'bar'
+                        },
+                        {
+                            label: 'EV Üretim',
+                            data: evUretim,
+                            borderColor: '#17A2B8',
+                            backgroundColor: chartType === 'bar' ? '#17A2B8' : 'rgba(23, 162, 184, 0.1)',
+                            tension: 0.4,
+                            fill: chartType !== 'bar'
+                        },
+                        {
+                            label: 'EV Tahmin',
+                            data: evTahmin,
+                            borderColor: '#FFC107',
+                            backgroundColor: chartType === 'bar' ? '#FFC107' : 'rgba(255, 193, 7, 0.2)',
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                }
+            });
+        }
+        // ===== GRAFİK 3: SENARYO HAT DAĞILIMI (ÖZEL MANTIK) =====
+        async function drawHatSenaryoChart(params, calculateScenario) {
+            if (!historicalData || !historicalData.data) {
+                KDS.showNoData('hatDagilimChart');
+                return;
+            }
+
+            const data = historicalData.data;
+
+            // Hat kapasiteleri (Mock veya API)
+            // Varsayalım her hat 50,000 kapasiteli
+            const kapasiteResponse = await KDS.fetchData(`/api/uretim/kapasite-yeterlilik?yil=${params.endYear}`);
+
+            // Eğer API'den gelen data boşsa veya yoksa mock veriyi kullan
+            const hatVerileri = (kapasiteResponse?.data && kapasiteResponse.data.length > 0)
+                ? kapasiteResponse.data
+                : [
+                    { hat_kodu: 'H-01', max_kapasite: 50000 }, { hat_kodu: 'H-02', max_kapasite: 50000 },
+                    { hat_kodu: 'H-03', max_kapasite: 50000 }, { hat_kodu: 'H-04', max_kapasite: 50000 }
+                ];
+
+            const hatKapasiteleri = hatVerileri.map(h => parseFloat(h.max_kapasite || 50000));
+            const hatKodlari = hatVerileri.map(h => h.hat_kodu);
+
+            // HESAPLAMA MANTIGI
+            let hatDagilim = [];
+            let remainingIce = 0;
+            let remainingEv = 0;
+
+            if (!calculateScenario) {
+                // VARSAYILAN: Hat 1-2 %100 ICE, Hat 3-4 %100 EV
+                hatDagilim = [
+                    { hatKodu: hatKodlari[0], ice: 100, ev: 0, kapasite: hatKapasiteleri[0] },
+                    { hatKodu: hatKodlari[1], ice: 100, ev: 0, kapasite: hatKapasiteleri[1] },
+                    { hatKodu: hatKodlari[2], ice: 0, ev: 100, kapasite: hatKapasiteleri[2] },
+                    { hatKodu: hatKodlari[3], ice: 0, ev: 100, kapasite: hatKapasiteleri[3] }
+                ];
+            } else {
+                // HESAPLANAN SENARYO
+                // 1. Toplam Tahmini Üretim İhtiyacını Bul
+                // (Basitce: Simdiki uretim * degisim orani)
+                // Daha dogrusu forecastData'dan almak lazim ama basitlestirelim:
+                const lastYearDataIce = data.filter(d => d.yil === params.endYear && d.guc_tipi === 'ICE');
+                const lastYearDataEv = data.filter(d => d.yil === params.endYear && d.guc_tipi === 'EV');
+
+                const currentIce = lastYearDataIce.reduce((s, d) => s + parseFloat(d.toplam_uretim || 0), 0);
+                const currentEv = lastYearDataEv.reduce((s, d) => s + parseFloat(d.toplam_uretim || 0), 0);
+
+                let targetIce = currentIce * (1 + params.iceChangePercent / 100);
+                let targetEv = currentEv * (1 + params.evChangePercent / 100);
+
+                remainingIce = targetIce;
+                remainingEv = targetEv;
+
+                // Hat Kapasiteleri (Sirali: 0, 1, 2, 3) -> (Hat 1, Hat 2, Hat 3, Hat 4)
+
+                // MANTIK:
+                // 1. ICE -> Hat 1'i doldurur.
+                // 2. ICE -> Hat 2'yi doldurur (Kalirsa).
+                // 3. EV -> Hat 4'u doldurur (Tersten).
+                // 4. EV -> Hat 3'u doldurur (Kalirsa).
+
+                // Tasmalari yonet:
+                // ICE Hat 1-2'yi dolduramazsa? -> EV Hat 2'den pay alir.
+                // EV Hat 3-4'u dolduramazsa? -> ICE Hat 3'ten pay alir.
+
+                // Cozum: Mevcut kapasiteleri dinamik doldurma
+                let lineUsage = [
+                    { ice: 0, ev: 0, cap: hatKapasiteleri[0] }, // H1
+                    { ice: 0, ev: 0, cap: hatKapasiteleri[1] }, // H2
+                    { ice: 0, ev: 0, cap: hatKapasiteleri[2] }, // H3
+                    { ice: 0, ev: 0, cap: hatKapasiteleri[3] }  // H4
+                ];
+
+                // Adim 1: ICE Hazir Hatlara (1 ve 2) Yerlesir
+                // Hat 1
+                let fill = Math.min(remainingIce, lineUsage[0].cap);
+                lineUsage[0].ice += fill;
+                remainingIce -= fill;
+
+                // Hat 2
+                fill = Math.min(remainingIce, lineUsage[1].cap);
+                lineUsage[1].ice += fill;
+                remainingIce -= fill;
+
+                // Adim 2: EV Hazir Hatlara (4 ve 3) Yerlesir
+                // Hat 4 (Oncelikli EV hatti)
+                fill = Math.min(remainingEv, lineUsage[3].cap);
+                lineUsage[3].ev += fill;
+                remainingEv -= fill;
+
+                // Hat 3
+                fill = Math.min(remainingEv, lineUsage[2].cap);
+                lineUsage[2].ev += fill;
+                remainingEv -= fill;
+
+                // Adim 3: Bosluklari Doldurma (Capraz Kullanim)
+                // Kural: "ice ilk 2 hattı dolduramadığı zaman ev 2. hattan yüzde alsın"
+                // Hat 2'de bosluk var mi?
+                let spaceH2 = lineUsage[1].cap - (lineUsage[1].ice + lineUsage[1].ev);
+                if (spaceH2 > 0 && remainingEv > 0) {
+                    fill = Math.min(remainingEv, spaceH2);
+                    lineUsage[1].ev += fill;
+                    remainingEv -= fill;
+                }
+
+                // Kural: "eğer ev hattından pay kalırsa ice 3. hattan başlayarak pay almaya başlasın"
+                // Hat 3'te bosluk var mi?
+                let spaceH3 = lineUsage[2].cap - (lineUsage[2].ice + lineUsage[2].ev);
+                if (spaceH3 > 0 && remainingIce > 0) {
+                    fill = Math.min(remainingIce, spaceH3);
+                    lineUsage[2].ice += fill;
+                    remainingIce -= fill;
+                }
+
+                // Eger hala artan varsa diger hatlara zorla (Opsiyonel, senaryoda belirtilmemis ama mantiken tasmali)
+                // Ornegin ICE cok artti, Hat 4'e de bulassin mi? Senaryo Hat 3 dedi, biz Hat 3'te biraktik.
+
+                // Hat Dagilimini Olustur
+                lineUsage.forEach((l, idx) => {
+                    const totalUsed = l.ice + l.ev;
+                    let icePercent = 0;
+                    let evPercent = 0;
+
+                    if (totalUsed > 0) {
+                        icePercent = (l.ice / totalUsed) * 100;
+                        evPercent = (l.ev / totalUsed) * 100;
+                    }
+
+                    hatDagilim.push({
+                        hatKodu: hatKodlari[idx],
+                        ice: icePercent,
+                        ev: evPercent,
+                        kapasite: l.cap
+                    });
+                });
+            }
+
+            // Kapasite analizi ve öneriler için window'a kaydet
+            // Bu kısım drawKapasiteChart'ta da kullanılıyor, bu yüzden burada da güncelleyelim.
+            const toplamKapasite = hatKapasiteleri.reduce((a, b) => a + b, 0);
+            const lastYear = params.endYear;
+            const iceData2025 = data.filter(d => d.yil === lastYear && d.guc_tipi === 'ICE');
+            const evData2025 = data.filter(d => d.yil === lastYear && d.guc_tipi === 'EV');
+
+            const iceUretim2025 = iceData2025.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+            const evUretim2025 = evData2025.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+
+            const iceTahmin2026 = iceUretim2025 * (1 + params.iceChangePercent / 100);
+            const evTahmin2026 = evUretim2025 * (1 + params.evChangePercent / 100);
+            const toplamTahmin = iceTahmin2026 + evTahmin2026;
+
+            window.hatDagilimData = hatDagilim;
+            window.kapasiteAnalizi = {
+                toplamKapasite,
+                toplamTahmin,
+                iceTahmin2026,
+                evTahmin2026,
+                // Bu değerler artık dinamik olarak hesaplanmalı, sabit değil
+                iceHatKapasite: hatKapasiteleri[0] + hatKapasiteleri[1], // H1 + H2
+                evHatKapasite: hatKapasiteleri[2] + hatKapasiteleri[3],   // H3 + H4
+                kalanIce: Math.max(0, remainingIce), // Kalan ICE talebi
+                kalanEv: Math.max(0, remainingEv),   // Kalan EV talebi
+                aylikArtis: (evTahmin2026 - evUretim2025) / 12
+            };
+
+            // Source güncelle
+            document.getElementById('hatDagilimChart-source').textContent = calculateScenario ? '✅ Hesaplandı' : '📌 Varsayılan';
+
+            // Grafik verileri - veritabanından gelen hat kodlarını kullan
+            const hatlar = hatKodlari;
+            const iceYuzde = hatDagilim.map(h => h.ice);
+            const evYuzde = hatDagilim.map(h => h.ev);
+
+            KDS.restoreCanvas('hatDagilimChart');
+            if (charts.hatSenaryo) charts.hatSenaryo.destroy();
+
+            const chartType = document.getElementById('chart3Type').value;
+
+            if (chartType === 'pie') {
+                const toplamIce = hatDagilim.reduce((s, h) => s + (h.ice * h.kapasite / 100), 0);
+                const toplamEv = hatDagilim.reduce((s, h) => s + (h.ev * h.kapasite / 100), 0);
+
+                charts.hatSenaryo = KDS.createChart('hatDagilimChart', {
+                    type: 'pie',
+                    data: {
+                        labels: ['ICE Toplam', 'EV Toplam'],
+                        datasets: [{
+                            data: [toplamIce, toplamEv],
+                            backgroundColor: ['#6C757D', '#28A745']
+                        }]
+                    }
+                });
+            } else {
+                charts.hatSenaryo = KDS.createChart('hatDagilimChart', {
+                    type: 'bar',
+                    data: {
+                        labels: hatlar,
+                        datasets: [
+                            {
+                                label: 'ICE %',
+                                data: iceYuzde,
+                                backgroundColor: '#6C757D'
+                            },
+                            {
+                                label: 'EV %',
+                                data: evYuzde,
+                                backgroundColor: '#28A745'
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true, max: 100 }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: (ctx) => {
+                                        const d = hatDagilim[ctx.dataIndex];
+                                        const type = ctx.dataset.label;
+                                        const val = type.includes('ICE') ? d.ice : d.ev;
+                                        const amount = Math.round(d.kapasite * val / 100);
+                                        return `${type}: %${Math.round(val)} (${amount.toLocaleString('tr-TR')})`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ===== GRAFİK 4: KAPASİTE YETERLİLİK ANALİZİ =====
+        async function drawKapasiteChart(params) {
+            const response = await KDS.fetchData(`/api/uretim/kapasite-yeterlilik?yil=${params.endYear}`);
+            updateSource('kapasiteChart-source', response);
+
+            if (!response || !response.data || response.data.length === 0) {
+                KDS.showNoData('kapasiteChart');
+                return;
+            }
+
+            const data = response.data;
+            const hatlar = data.map(d => d.hat_kodu);
+            const kapasite = data.map(d => parseFloat(d.max_kapasite || 0));
+            const talep = data.map(d => parseFloat(d.talep || 0));
+            const fark = data.map(d => parseFloat(d.kapasite_farki || 0));
+
+            // ===== KAPASİTE SIKIŞIKLIK ANALİZİ =====
+            const toplamKapasite = kapasite.reduce((a, b) => a + b, 0);
+            const toplamTalep = talep.reduce((a, b) => a + b, 0);
+
+            // 2026 tahminini hesapla (ICE ve EV değişim oranları ile)
+            const iceData = historicalData?.data?.filter(d => d.yil === params.endYear && d.guc_tipi === 'ICE') || [];
+            const evData = historicalData?.data?.filter(d => d.yil === params.endYear && d.guc_tipi === 'EV') || [];
+            const iceUretim = iceData.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+            const evUretim = evData.reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+
+            const iceTahmin2026 = iceUretim * (1 + params.iceChangePercent / 100);
+            const evTahmin2026 = evUretim * (1 + params.evChangePercent / 100);
+            const toplamTahmin2026 = iceTahmin2026 + evTahmin2026;
+
+            // Kapasite aşımı kontrolü
+            const kapasteAsimi = toplamTahmin2026 - toplamKapasite;
+            let kapasiteUyarisi = '';
+            let sorunsuzAy = 12; // Default: 12 ay sorunsuz
+
+            // Karar destek önerileri
+            const oneriler = [];
+
+            if (kapasteAsimi > 0) {
+                // Aylık üretim
+                const aylikUretim = toplamTahmin2026 / 12;
+                // Kaç ay sonra kapasite dolacak
+                sorunsuzAy = Math.floor(toplamKapasite / aylikUretim);
+
+                kapasiteUyarisi = `🔴 Kapasite artırımı gereklidir!`;
+                oneriler.push(`🔴 <strong>KAPASİTE UYARISI:</strong> ${Math.round(kapasteAsimi).toLocaleString('tr-TR')} birim aşım tespit edildi`);
+                oneriler.push(`⏱️ Mevcut kapasite ile <strong>${sorunsuzAy} ay</strong> sorunsuz devam edilebilir`);
+                oneriler.push(`📈 Tahmini sıkışıklık zamanı: <strong>${params.endYear + 1} - Ay ${sorunsuzAy + 1}</strong>`);
+                oneriler.push(`🏭 Öneri: ${Math.ceil(kapasteAsimi / 50000)} adet yeni hat veya mevcut hatlarda kapasite artırımı gerekli`);
+            } else {
+                kapasiteUyarisi = `✅ Kapasite yeterli`;
+                oneriler.push(`✅ Kapasite yeterli (+${Math.round(Math.abs(kapasteAsimi)).toLocaleString('tr-TR')} rezerv)`);
+            }
+
+            // Source güncelle
+            const kapasiteEl = document.getElementById('kapasiteChart-source');
+            kapasiteEl.innerHTML = kapasiteUyarisi;
+            kapasiteEl.style.color = kapasteAsimi > 0 ? '#DC3545' : '#28A745';
+
+            // Analiz kutusuna önerileri ekle
+            const analysisRec = document.getElementById('analysis-recommendation');
+            analysisRec.innerHTML = oneriler.join('<br>');
+
+            KDS.restoreCanvas('kapasiteChart');
+            if (charts.kapasite) charts.kapasite.destroy();
+
+            const chartType = document.getElementById('chart4Type').value;
+
+            // Senaryo bazlı 2026 tahmini hesapla (hat bazında dağıt)
+            // Toplam kapasite üzerinden her hattın payını hesapla
+            const hatSayisi = hatlar.length;
+            const hatBazinaIceTahmin = iceTahmin2026 / Math.max(2, hatSayisi / 2); // İlk yarı ICE
+            const hatBazinaEvTahmin = evTahmin2026 / Math.max(2, hatSayisi / 2);   // İkinci yarı EV
+
+            // Senaryo bazlı talep (2026 tahmini)
+            const talepSenaryo = hatlar.map((hat, idx) => {
+                if (idx < hatSayisi / 2) {
+                    // İlk yarı: ICE ağırlıklı
+                    return Math.round(hatBazinaIceTahmin * 0.8 + hatBazinaEvTahmin * 0.2);
+                } else {
+                    // İkinci yarı: EV ağırlıklı  
+                    return Math.round(hatBazinaEvTahmin * 0.8 + hatBazinaIceTahmin * 0.2);
+                }
+            });
+
+            // Senaryo bazlı kapasite farkı
+            const farkSenaryo = kapasite.map((kap, idx) => Math.round(kap - talepSenaryo[idx]));
+
+            charts.kapasite = KDS.createChart('kapasiteChart', {
+                type: chartType,
+                data: {
+                    labels: hatlar,
+                    datasets: [
+                        {
+                            label: 'Mevcut Kapasite',
+                            data: kapasite,
+                            borderColor: '#28A745',
+                            backgroundColor: chartType === 'bar' ? '#28A745' : 'rgba(40, 167, 69, 0.2)',
+                            tension: 0.4,
+                            fill: chartType !== 'bar'
+                        },
+                        {
+                            label: '2026 Tahmin Talep',
+                            data: talepSenaryo,
+                            borderColor: '#FFC107',
+                            backgroundColor: chartType === 'bar' ? '#FFC107' : 'rgba(255, 193, 7, 0.2)',
+                            tension: 0.4,
+                            fill: chartType !== 'bar'
+                        },
+                        {
+                            label: 'Kapasite Farkı (Senaryo)',
+                            data: farkSenaryo,
+                            borderColor: farkSenaryo.map(f => f >= 0 ? '#28A745' : '#DC3545'),
+                            backgroundColor: farkSenaryo.map(f => f >= 0 ? 'rgba(40, 167, 69, 0.5)' : 'rgba(220, 53, 69, 0.5)'),
+                            type: 'bar'
+                        }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: (ctx) => {
+                                    if (ctx.dataset.label === 'Kapasite Farkı (Senaryo)') {
+                                        return ctx.raw >= 0 ? '✅ Yeterli' : '❌ Yetersiz';
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateKPIs(params) {
+            if (historicalData && historicalData.data) {
+                const data = historicalData.data;
+                const lastYear = Math.max(...data.map(d => d.yil));
+                const lastYearData = data.filter(d => d.yil === lastYear);
+
+                // Son yıl üretim değerleri
+                const iceTotal = lastYearData.filter(d => d.guc_tipi === 'ICE')
+                    .reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+                const evTotal = lastYearData.filter(d => d.guc_tipi === 'EV')
+                    .reduce((sum, d) => sum + parseFloat(d.toplam_uretim || 0), 0);
+
+                KDS.updateKPI('kpi-ice', Math.round(iceTotal).toLocaleString('tr-TR'), 'adet');
+                KDS.updateKPI('kpi-ev', Math.round(evTotal).toLocaleString('tr-TR'), 'adet');
+
+                // Tahmin değerleri - GRAFİKTEKİ HESAPLAMAYLA AYNI FORMÜL
+                // 2026 tahmini = Son yıl üretim * (1 + değişim yüzdesi / 100)
+                const iceTahmin2026 = iceTotal * (1 + params.iceChangePercent / 100);
+                const evTahmin2026 = evTotal * (1 + params.evChangePercent / 100);
+
+                KDS.updateKPI('kpi-ice-forecast', Math.round(iceTahmin2026).toLocaleString('tr-TR'), 'adet');
+                KDS.updateKPI('kpi-ev-forecast', Math.round(evTahmin2026).toLocaleString('tr-TR'), 'adet');
+            }
+        }
+
+        function updateAnalysis(params) {
+            const analysisEl = document.getElementById('analysis-text');
+            const recEl = document.getElementById('analysis-recommendation');
+
+            if (!historicalData || !forecastData) {
+                analysisEl.textContent = 'Veri yüklenmedi.';
+                recEl.textContent = '';
+                return;
+            }
+
+            const iceChange = params.iceChangePercent;
+            const evChange = params.evChangePercent;
+            const kapasite = window.kapasiteAnalizi || {};
+
+            // Format percentages
+            const iceFmt = (typeof iceChange === 'number') ? iceChange.toFixed(0) : iceChange;
+            const evFmt = (typeof evChange === 'number') ? evChange.toFixed(0) : evChange;
+
+            let dolulukOrani = 0;
+            if (kapasite.toplamKapasite > 0) {
+                dolulukOrani = (kapasite.toplamTahmin / kapasite.toplamKapasite) * 100;
+            }
+
+            // Analiz Metni
+            let analysis = `📊 ${params.startYear}-${params.endYear} dönemi analiz edildi. `;
+            analysis += `Gelecek projeksiyonda ICE için %${iceFmt}, EV için %${evFmt} değişim öngörülüyor. `;
+            analysis += `Toplam hat doluluk oranı: <strong>%${dolulukOrani.toFixed(2)}</strong>.`;
+
+            // Dönüşüm Önerisi (Hat 2, 3, 4 kontrolü)
+            let donusumOneri = '';
+            if (window.hatDagilimData) {
+                const hat2 = window.hatDagilimData[1];
+                const hat3 = window.hatDagilimData[2];
+                // EV taşması durumunda Hat 2 önerisi
+                if (hat2 && hat2.ev > 0) {
+                    donusumOneri += `🚛 Önümüzdeki dönem <strong>Hat 2</strong>'nin <strong style="color:#28A745;">%${Math.round(hat2.ev)}</strong>'lik bölümünü EV üretim hattına dönüştürmeliyiz.<br>`;
+                }
+                // ICE taşması durumunda Hat 3 önerisi
+                if (hat3 && hat3.ice > 0) {
+                    donusumOneri += `🏭 Önümüzdeki dönem <strong>Hat 3</strong>'ün <strong style="color:#6C757D;">%${Math.round(hat3.ice)}</strong>'lik bölümünü ICE üretim hattına dönüştürmeliyiz.<br>`;
+                }
+            }
+
+            // Kapasite Dayanım Hesabı (Logic based)
+            let limitMsg = '';
+            if (dolulukOrani > 100 && kapasite.toplamKapasite > 0) {
+                // Son yıl verisini baz al
+                const lastYear = params.endYear;
+                const lastItems = historicalData.data.filter(d => d.yil == lastYear);
+                const lastIce = lastItems.filter(d => d.guc_tipi === 'ICE').reduce((a, b) => a + (parseFloat(b.toplam_uretim) || 0), 0);
+                const lastEv = lastItems.filter(d => d.guc_tipi === 'EV').reduce((a, b) => a + (parseFloat(b.toplam_uretim) || 0), 0);
+
+                let currentIceMonth = lastIce / 12;
+                let currentEvMonth = lastEv / 12;
+                const capacityMonth = kapasite.toplamKapasite / 12; // Aylık kapasite
+
+                let monthsToLimit = 0;
+                // 5 yıl (60 ay) simüle et
+                for (let m = 1; m <= 60; m++) {
+                    currentIceMonth *= (1 + (iceChange / 100 / 12));
+                    currentEvMonth *= (1 + (evChange / 100 / 12));
+
+                    if (currentIceMonth + currentEvMonth > capacityMonth) {
+                        monthsToLimit = m;
+                        break;
+                    }
+                }
+
+                if (monthsToLimit > 0) {
+                    limitMsg = `⏱️ Mevcut kapasite, bu senaryo parametreleriyle yaklaşık <strong style="color:#DC3545;">${monthsToLimit} ay</strong> daha dayanabilir. `;
+                    limitMsg += `Bu süreden sonra ek hat veya vardiya artışı <strong>zorunludur</strong>.`;
+                } else {
+                    limitMsg = `⏱️ Kapasite şuan bile yetersiz! Acil yatırım gereklidir.`;
+                }
+            }
+
+            // Genel Tavsiye Oluşturma
+            let recommendation = '';
+            if (dolulukOrani > 100) {
+                recommendation = `⚠️ <strong style="color:#DC3545;">KAPASİTE AŞIMI!</strong><br>${limitMsg}`;
+            } else if (dolulukOrani > 90) {
+                recommendation = `⚠️ <strong style="color:#FFC107;">Kritik Seviye.</strong> Hatlar tam kapasiteye yakın çalışacak.`;
+            } else {
+                recommendation = `✅ Mevcut kapasite senaryo için yeterli.`;
+            }
+
+            // Birleştir
+            if (donusumOneri) {
+                recommendation = donusumOneri + '<br><br>' + recommendation;
+            }
+
+            analysisEl.innerHTML = analysis;
+            recEl.innerHTML = recommendation;
+        }
+
+        function updateDebugPanel(params) {
+            let html = '<table style="width:100%"><tr style="background:#e9ecef"><th>Endpoint</th><th>Kaynak</th><th>Satır</th><th>Parametreler</th></tr>';
+
+            if (historicalData && historicalData.meta) {
+                const m = historicalData.meta;
+                html += `<tr><td>/api/uretim/historical</td><td>${m.source}</td><td>${m.historicalRows}</td><td>startYear=${params.startYear}, endYear=${params.endYear}</td></tr>`;
+            }
+
+            if (forecastData && forecastData.meta) {
+                const m = forecastData.meta;
+                html += `<tr><td>/api/uretim/forecast</td><td>${m.source}</td><td>${m.forecastMonths} ay</td><td>ICE: ${params.iceChangePercent}%, EV: ${params.evChangePercent}%</td></tr>`;
+            }
+
+            html += '</table>';
+            document.getElementById('debugContent').innerHTML = html;
+        }
+
+        function updateSource(id, response) {
+            const el = document.getElementById(id);
+            if (response?.meta?.source === 'mysql') {
+                el.textContent = `✅ MySQL (${response.meta.historicalRows || response.meta.rowCount || 0})`;
+                el.style.color = '#28A745';
+            } else {
+                el.textContent = '❌ Veri Yok';
+                el.style.color = '#DC3545';
+            }
+        }
+    </script>
+</body>
+
+</html>
